@@ -591,7 +591,7 @@ async function loadCategoryTotals(startArg, endArg) {
           }
           if (!items.length) {
               if (d.total > 0) {
-                  const name = "Uncategorized";
+                  const name = "Customized";
                   if (!totals[name]) totals[name] = 0;
                   if (mode === "amount") totals[name] += Number(d.total);
               }
@@ -611,7 +611,7 @@ async function loadCategoryTotals(startArg, endArg) {
             }
             
             catId = Number(catId)
-            let name = categoryMap[catId] || (catId ? "Category " + catId : "Uncategorized")
+            let name = categoryMap[catId] || (catId ? "Category " + catId : "Customized")
             
             if (!totals[name]) totals[name] = 0
             if (mode === "quantity") {
@@ -645,7 +645,7 @@ async function loadCategoryTotals(startArg, endArg) {
               if (!catId && it.id) catId = productCats[it.id]
               
               catId = Number(catId)
-              let name = categoryMap[catId] || (catId ? "Category " + catId : "Uncategorized")
+              let name = categoryMap[catId] || (catId ? "Category " + catId : "Customized")
               
               if (!totals[name]) totals[name] = 0
               if (mode === "quantity") {
@@ -700,7 +700,7 @@ async function loadCategoryTotals(startArg, endArg) {
           catId = Number(catId)
           let name = categoryMap[catId]
           if (!name && catId) name = "Category " + catId
-          if (!name) name = "Uncategorized"
+          if (!name) name = "Customized"
           
           if (!totals[name]) totals[name] = 0
           if (mode === "quantity") {
@@ -847,46 +847,76 @@ async function loadAnalyticsTotals() {
     totalQty += qty
   }
 
-  if (sourceSel === "sales") {
-    const { data: salesData } = await getDB().from("sales").select("*")
-    if (salesData) {
-      salesData.forEach((d) => {
+    if (sourceSel === "sales") {
+      // Walk-ins
+      const { data: salesData } = await getDB().from("sales").select("*")
+      if (salesData) {
+        salesData.forEach((d) => {
+          let ts = null
+          // Prioritize transaction date over booked date
+          if (d.sale_date) {
+              ts = new Date(d.sale_date)
+          } else if (d.timestamp) {
+              ts = new Date(d.timestamp)
+          } else if (d.created_at) {
+              ts = new Date(d.created_at)
+          } else if (d.date && typeof d.date === 'string' && d.date.includes('-')) {
+              ts = new Date(d.date + "T00:00:00")
+          }
+          
+          if (!ts || isNaN(ts.getTime())) ts = new Date()
+          
+          const y = ts.getFullYear()
+          const m = String(ts.getMonth() + 1).padStart(2, "0")
+          const da = String(ts.getDate()).padStart(2, "0")
+          const dateStr = `${y}-${m}-${da}`
+          
+          let items = d.items || [];
+          if (typeof items === 'string') {
+               try { items = JSON.parse(items); } catch(e) { items = []; }
+          }
+
+          const qty = items.reduce((s, i) => s + Number(i.quantity || i.qty || 0), 0)
+          const amount =
+            Number(d.total || 0) || Number(d.amount || 0) ||
+            (Array.isArray(items) ? items.reduce((s, i) => s + Number(i.amount || (Number(i.price || 0) * Number(i.quantity || i.qty || 0))), 0) : 0)
+          addPoint(dateStr, ts, qty, amount)
+        })
+      }
+    } else if (sourceSel === "pending") {
+      // Customer Terminal (bookings/pending_orders)
+      const [bookingsRes, pendingOrdersRes] = await Promise.all([
+        getDB().from("bookings").select("*").in("status", ["completed", "accepted", "paid", "ready"]),
+        getDB().from("pending_orders").select("*").eq("status", "completed")
+      ])
+      
+      const allTerminalData = [...(bookingsRes.data || []), ...(pendingOrdersRes.data || [])]
+      
+      allTerminalData.forEach((d) => {
         let ts = null
-        // Prioritize transaction date over booked date
-        if (d.sale_date) {
-            ts = new Date(d.sale_date)
-        } else if (d.timestamp) {
-            ts = new Date(d.timestamp)
-        } else if (d.created_at) {
-            ts = new Date(d.created_at)
-        } else if (d.date && typeof d.date === 'string' && d.date.includes('-')) {
-            ts = new Date(d.date + "T00:00:00")
-        }
+        if (d.sale_date) ts = new Date(d.sale_date)
+        else if (d.timestamp) ts = new Date(d.timestamp)
+        else if (d.created_at) ts = new Date(d.created_at)
+        else if (d.date && typeof d.date === 'string' && d.date.includes('-')) ts = new Date(d.date + "T00:00:00")
         
         if (!ts || isNaN(ts.getTime())) ts = new Date()
-        
         const y = ts.getFullYear()
         const m = String(ts.getMonth() + 1).padStart(2, "0")
         const da = String(ts.getDate()).padStart(2, "0")
         const dateStr = `${y}-${m}-${da}`
         
-        let items = d.items || [];
-        if (typeof items === 'string') {
-             try { items = JSON.parse(items); } catch(e) { items = []; }
-        }
-
+        let items = d.items || []
+        if (typeof items === 'string') { try { items = JSON.parse(items); } catch(e) {} }
+        
         const qty = items.reduce((s, i) => s + Number(i.quantity || i.qty || 0), 0)
-        const amount =
-          Number(d.total || 0) || Number(d.amount || 0) ||
-          (Array.isArray(items) ? items.reduce((s, i) => s + Number(i.amount || (Number(i.price || 0) * Number(i.quantity || i.qty || 0))), 0) : 0)
+        const amount = Number(d.total || 0) || (Array.isArray(items) ? items.reduce((s, i) => s + (Number(i.price || 0) * Number(i.quantity || i.qty || 0)), 0) : 0)
         addPoint(dateStr, ts, qty, amount)
       })
     }
-  }
 
-  // If "all" is selected, we combine data sources but try to avoid double counting.
-  // We prioritize 'sales' table for transaction totals.
-  if (sourceSel === "all") {
+    // If "all" is selected, we combine data sources but try to avoid double counting.
+    // We prioritize 'sales' table for transaction totals.
+    if (sourceSel === "all") {
     const { data: salesData } = await getDB().from("sales").select("*")
     if (salesData) {
       salesData.forEach((d) => {
@@ -937,8 +967,11 @@ async function loadAnalyticsTotals() {
   }
 
   const labels = Object.keys(totals).sort()
-  const values = labels.map((k) => totals[k].total)
-  return { labels, values, totalSales, totalQty }
+  const values = labels.map((k) => {
+      const mode = document.getElementById("catMode")?.value || "amount"
+      return mode === "quantity" ? totals[k].qty : totals[k].total
+    })
+    return { labels, values, totalSales, totalQty }
 }
 
 function normalizeProductName(name) {
@@ -2477,7 +2510,7 @@ window.renderReports = async function() {
              if(docTotal === 0 && storedTotal > 0) docTotal = storedTotal;
              else if (Math.abs(docTotal - storedTotal) > 0.01 && storedTotal > 0) docTotal = storedTotal;
 
-             grandTotal += docTotal;
+             grandTotal += itemsTotal; // Use full amount for consistency with table display
              grandQty += docQty;
              transCount++;
              
@@ -2487,9 +2520,10 @@ window.renderReports = async function() {
                      rawTs: ts ? ts.getTime() : 0,
                      itemsCount: docQty,
                      total: docTotal,
-                     status: isPartial ? 'Partial Payment' : 'Completed',
+                     status: 'Completed',
                      isPartial: isPartial,
                      fullAmount: itemsTotal,
+                     paymentMethod: d.payment_method || d.paymentMethod || 'cash',
                      items: itemsList
                  });
              }
@@ -2510,13 +2544,10 @@ window.renderReports = async function() {
                 tr.title = 'Click to view details';
                 
                 let statusColor = 'green';
-                let statusText = t.status;
-                if (t.isPartial) {
-                    statusColor = '#d39e00'; // Amber/Yellow
-                    statusText = 'Partial Payment';
-                }
+                let statusText = 'Completed'; // Point 2 & 4: Partial Payment should display as Completed
                 
-                tr.innerHTML = `<td style="font-family: 'Courier New', Courier, monospace; font-weight: 600;">${t.dateTime}</td><td style="font-family: 'Courier New', Courier, monospace;">${t.itemsCount}</td><td style="font-family: 'Courier New', Courier, monospace;">₱${t.total.toFixed(2)}</td><td><span style="color:${statusColor};font-weight:bold">${statusText}</span></td>`;
+                // Use fullAmount instead of partial total
+                tr.innerHTML = `<td style="font-family: 'Courier New', Courier, monospace; font-weight: 600;">${t.dateTime}</td><td style="font-family: 'Courier New', Courier, monospace;">${t.itemsCount}</td><td style="font-family: 'Courier New', Courier, monospace;">₱${t.fullAmount.toFixed(2)}</td><td><span style="color:${statusColor};font-weight:bold">${statusText}</span></td>`;
                 
                 const trDetail = document.createElement('tr');
                 trDetail.style.display = 'none';
@@ -2528,6 +2559,10 @@ window.renderReports = async function() {
                 let html = '<div style="padding: 10px 20px; border-left: 3px solid #007bff;">';
                 html += '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; color: #555;">Transaction Details</h4>';
                 
+                // Add Payment Method info
+                const pm = String(t.paymentMethod || 'cash').toUpperCase();
+                html += `<div style="margin-bottom: 8px; font-size: 0.85em; color: #666;"><strong>Payment Method:</strong> ${pm}</div>`;
+
                 if (t.isPartial) {
                     html += `<div style="margin-bottom: 10px; padding: 8px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; color: #856404; font-size: 0.85em;">
                         <strong>Already Paid:</strong> ₱${t.total.toFixed(2)} of ₱${t.fullAmount.toFixed(2)} total amount.
@@ -2659,9 +2694,10 @@ window.downloadReportsCSV = async function() {
                 
                 const finalTotal = (rawTotal || (price * qty)) * scaleFactor;
                 
+                // Use a single quote prefix (') to force Excel/WPS to treat this as text
                 rows.push([
-                  `"${dateStr}"`, 
-                  `"${timeStr}"`,
+                  `"'${dateStr}"`, 
+                  `"'${timeStr}"`,
                   `"${(it.name || "Unknown").replace(/"/g, '""')}"`, 
                   qty, 
                   `"\u20B1${finalTotal.toFixed(2)}"`
@@ -2679,13 +2715,13 @@ window.downloadReportsCSV = async function() {
         const url = URL.createObjectURL(blob); 
         const a = document.createElement('a'); 
         a.href = url; 
-        a.download = `sales_report_${new Date().toISOString().split('T')[0]}.csv`; 
+        a.download = `Sales_Report_${new Date().toISOString().split('T')[0]}.csv`; 
         document.body.appendChild(a);
         a.click(); 
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     } catch (err) {
-        console.error("Error downloading sales CSV:", err);
+        console.error("Error downloading reports CSV:", err);
         window.showMessage("Error generating CSV", "error");
     }
 }

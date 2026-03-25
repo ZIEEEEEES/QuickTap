@@ -204,6 +204,84 @@ window.applyCashierMonitorRange = function() {
   if (typeof loadCashierMonitoring === 'function') loadCashierMonitoring()
 }
 
+// --- MONITORINGS (CASHIER TRANSACTIONS) ---
+function formatCashierActivityDetail(str) {
+  if (!str) return '';
+  
+  // 1. Clean technical ISO timestamps first (e.g. 2026-03-25T15:52:59.987Z -> 15:52:59)
+  const isoRegex = /\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2})(?:\.\d+)?Z?/g;
+  let processed = str.replace(isoRegex, (match, time) => time);
+
+  // 2. Remove "ORDER" and "ORDER_ID" labels entirely as requested
+  processed = processed.replace(/(ORDER|ORDER_ID):\s*/gi, '');
+
+  // 3. Try to extract key-value pairs (handles both "key:val | key:val" and "key:val key:val")
+  // This regex looks for word:value patterns
+  const kvRegex = /(\w+):([^|]+?)(?=\s+\w+:|$|\|)/g;
+  const matches = [...processed.matchAll(kvRegex)];
+  
+  if (matches.length > 0) {
+    let html = '<table style="width: 100%; font-size: 0.75rem; border-collapse: collapse; margin-top: 4px; background: #fff; border: 1px solid #eee;">';
+    matches.forEach(m => {
+      const key = m[1].trim();
+      const value = m[2].trim();
+      html += `<tr>
+        <td style="padding: 4px 8px; color: #888; font-weight: bold; width: 40%; border: 1px solid #eee; background: #fafafa; text-transform: uppercase; font-size: 0.65rem;">${key}</td>
+        <td style="padding: 4px 8px; color: #333; border: 1px solid #eee;">${value}</td>
+      </tr>`;
+    });
+    html += '</table>';
+    
+    // Check for any descriptive text that wasn't a key-value pair
+    const leftover = processed.replace(kvRegex, '').replace(/\|/g, '').trim();
+    if (leftover && leftover.length > 2) {
+      return `<div style="margin-bottom:4px; font-size:0.8rem; color:#555;">${leftover}</div>` + html;
+    }
+    return html;
+  }
+  
+  return processed;
+}
+
+function formatAutoRemarks(remarks) {
+  if (!remarks) return '';
+  if (!remarks.startsWith('Auto:')) return remarks;
+  
+  const clean = remarks.replace('Auto:', '').trim();
+  
+  // 1. Clean technical ISO timestamps first (e.g. 2026-03-25T15:52:59.987Z -> 15:52:59)
+  const isoRegex = /\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2})(?:\.\d+)?Z?/g;
+  const processedRemarks = clean.replace(isoRegex, (match, time) => time);
+
+  // 2. Remove "ORDER" / "ORDER_ID" references
+  const finalClean = processedRemarks.replace(/(ORDER|ORDER_ID):\s*/gi, '');
+
+  const parts = finalClean.split('|').map(p => p.trim()).filter(p => p);
+  
+  let html = '<table style="width: 100%; font-size: 0.7rem; border-collapse: collapse; background: #fdfdfd; border: 1px solid #eee; border-radius: 4px; overflow: hidden;">';
+  let hasRows = false;
+
+  parts.forEach(part => {
+    // Check if it's a simple key:value pair
+    const colonCount = (part.match(/:/g) || []).length;
+    
+    if (colonCount === 1) {
+      const [key, val] = part.split(':');
+      html += `<tr>
+        <td style="padding: 4px 8px; color: #999; font-weight: bold; border-bottom: 1px solid #eee; width: 35%; background: #fcfcfc; text-transform: uppercase; font-size: 0.6rem;">${key.trim()}</td>
+        <td style="padding: 4px 8px; color: #444; border-bottom: 1px solid #eee;">${val.trim()}</td>
+      </tr>`;
+      hasRows = true;
+    } else if (part.length > 0) {
+      html += `<tr><td colspan="2" style="padding: 4px 8px; color: #777; font-style: italic; border-bottom: 1px solid #eee; background: #fff;">${part}</td></tr>`;
+      hasRows = true;
+    }
+  });
+  
+  html += '</table>';
+  return hasRows ? html : finalClean;
+}
+
 window.loadCashierMonitoring = async function() {
   const container = document.getElementById('cashierMonitorContainer')
   if (!container) return
@@ -494,9 +572,13 @@ window.loadCashierMonitoring = async function() {
             }
             let txId = s.id ? `#${s.id}` : (s.booking_id ? `#B${s.booking_id}` : '-');
             let typeBadge = "";
+            let leftColor = 'transparent';
+            
             if (s.type === 'preorder' || s.booking_id) {
+              leftColor = '#0d47a1'; // Blue
               typeBadge = '<span style="background: #e3f2fd; color: #0d47a1; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-left: 5px;">PRE-ORDER</span>';
             } else if (s.type === 'kiosk_order') {
+              leftColor = '#2e7d32'; // Green
               typeBadge = '<span style="background: #f1f8e9; color: #2e7d32; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-left: 5px;">KIOSK</span>';
             }
             
@@ -533,46 +615,47 @@ window.loadCashierMonitoring = async function() {
                
                if (due > 0) {
                  amountDetails = `
-                   <div style="color: #d9534f; font-weight: bold;">Paid: ₱${paid.toFixed(2)}</div>
+                   <div style="color: #d9534f;">Paid: ₱${paid.toFixed(2)}</div>
                    <div style="color: #f0ad4e; font-size: 0.8rem;">Due: ₱${due.toFixed(2)}</div>
                    <div style="border-top: 1px solid #eee; margin-top: 4px; padding-top: 4px; font-size: 0.75rem; color: #888;">Total: ₱${fullTotal.toFixed(2)}</div>
                  `
                } else {
                  amountDetails = `
-                   <div style="font-weight: bold; color: #2e7d32;">Paid: ₱${paid.toFixed(2)}</div>
+                   <div style="color: #2e7d32;">Paid: ₱${paid.toFixed(2)}</div>
                    <div style="font-size: 0.75rem; color: #5cb85c;">(Fully Paid)</div>
                  `
                }
             }
 
+            const formattedRemarks = formatAutoRemarks(remarks);
+            
             return `<tr style="border-bottom: 1px solid #f5f5f5;">
-                <td class="monitor-td" style="font-size: 0.85rem; color: #666;">${ts}</td>
-                <td class="monitor-td" style="font-family: 'Courier New', monospace; font-size: 0.85rem;">${txId}${typeBadge}</td>
-                <td class="monitor-td" style="text-align: center;">${qty || '-'}</td>
-                <td class="monitor-td" style="font-size: 0.85rem; line-height: 1.4;">${productList}</td>
-                <td class="monitor-td" style="white-space: nowrap;">${amountDetails}</td>
-                <td class="monitor-td monitor-remarks" style="font-size: 0.8rem; color: #777; font-style: italic;">${remarks}</td>
+                <td class="monitor-td" style="font-size: 0.85rem; color: #666; font-weight: normal; border-left: 4px solid ${leftColor}; padding-left: 16px;">${ts}</td>
+                <td class="monitor-td" style="font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: normal;">${txId}${typeBadge}</td>
+                <td class="monitor-td" style="text-align: center; font-weight: normal;">${qty || '-'}</td>
+                <td class="monitor-td" style="font-size: 0.85rem; line-height: 1.4; font-weight: normal;">${productList}</td>
+                <td class="monitor-td" style="white-space: nowrap; font-weight: normal;">${amountDetails}</td>
+                <td class="monitor-td monitor-remarks" style="font-size: 0.8rem; color: #777; font-weight: normal;">${formattedRemarks}</td>
               </tr>`;
           } else {
             const l = item.data;
             const d = new Date(l.created_at);
             const ts = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            let actionIcon = "⚙️";
-            if (l.action.toLowerCase().includes("insufficient")) actionIcon = "⚠️";
-            else if (l.action.toLowerCase().includes("completion") || l.action.toLowerCase().includes("received")) actionIcon = "✅";
-            else if (l.action.toLowerCase().includes("status")) actionIcon = "📝";
-
+            const formattedDetails = formatCashierActivityDetail(l.details);
+            
             return `<tr style="background: #fafafa; border-bottom: 1px solid #eee;">
-              <td class="monitor-td" style="font-size: 0.8rem; color: #999;">${ts}</td>
-              <td class="monitor-td" colspan="2">
+              <td class="monitor-td" style="font-size: 0.8rem; color: #999; font-weight: normal; border-left: 4px solid #eee; padding-left: 16px;">${ts}</td>
+              <td class="monitor-td" style="font-weight: normal;">
                 <span style="background: #eee; color: #666; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; text-transform: uppercase;">CASHIER ACTION</span>
               </td>
-              <td class="monitor-td">
-                <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #555; font-size: 0.85rem;">
-                  <span>${actionIcon}</span> ${l.action}
+              <td class="monitor-td" style="text-align: center; color: #ccc;">-</td>
+              <td class="monitor-td" style="font-weight: normal;">
+                <div style="display: flex; align-items: center; gap: 6px; color: #555; font-size: 0.85rem; font-weight: normal;">
+                  ${l.action}
                 </div>
               </td>
-              <td class="monitor-td" colspan="2" style="font-size: 0.8rem; color: #888; font-style: italic;">${l.details || ''}</td>
+              <td class="monitor-td" style="font-size: 0.8rem; color: #888; font-weight: normal;">${formattedDetails || ''}</td>
+              <td class="monitor-td" style="text-align: center; color: #ccc;">-</td>
             </tr>`;
           }
         }).join('');
@@ -602,7 +685,7 @@ window.loadCashierMonitoring = async function() {
               <table class="monitor-table" style="width: 100%; border-collapse: collapse;">
                 <thead>
                   <tr style="background: #f8f9fa; border-bottom: 2px solid #eee;">
-                    <th style="padding: 14px 20px; text-align: left; font-size: 0.7rem; text-transform: uppercase; color: #999; letter-spacing: 0.1em; width: 120px;">Time/Date</th>
+                    <th style="padding: 14px 20px; text-align: left; font-size: 0.7rem; text-transform: uppercase; color: #999; letter-spacing: 0.1em; width: 120px;">Date</th>
                     <th style="padding: 14px 20px; text-align: left; font-size: 0.7rem; text-transform: uppercase; color: #999; letter-spacing: 0.1em; width: 180px;">ID / Type</th>
                     <th style="padding: 14px 20px; text-align: center; font-size: 0.7rem; text-transform: uppercase; color: #999; letter-spacing: 0.1em; width: 80px;">Qty</th>
                     <th style="padding: 14px 20px; text-align: left; font-size: 0.7rem; text-transform: uppercase; color: #999; letter-spacing: 0.1em;">Action / Product</th>
@@ -1517,6 +1600,7 @@ window.loadPromos = async function() {
         <td>${photoHTML}</td>
         <td><strong>${p.title || "Untitled"}</strong></td>
         <td><div style="max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.content || ""}</div></td>
+        <td><span style="color:var(--coffee-dark);">${p.valid_from || "N/A"}</span></td>
         <td><span style="color:var(--accent-warm);font-weight:700;">${p.valid_until || "No Expiry"}</span></td>
         <td>
           <div style="display:flex; gap:6px;">
@@ -1540,6 +1624,7 @@ window.editPromo = async function(id) {
         
         document.getElementById("promoTitle").value = data.title || ""
         document.getElementById("promoContent").value = data.content || ""
+        document.getElementById("promoFrom").value = data.valid_from || ""
         document.getElementById("promoUntil").value = data.valid_until || ""
         
         // Handle photo preview
@@ -1591,6 +1676,7 @@ window.deletePromo = async function(id) {
 function resetPromoForm() {
     document.getElementById("promoTitle").value = ""
     document.getElementById("promoContent").value = ""
+    document.getElementById("promoFrom").value = ""
     document.getElementById("promoUntil").value = ""
     document.getElementById("promo_photo").value = ""
     
@@ -1613,15 +1699,18 @@ function resetPromoForm() {
 }
 
 window.addPromoSubmit = async function addPromoSubmit() {
+  console.log("[Admin] addPromoSubmit initiated");
   const addBtn = document.getElementById("addPromoBtn")
   if (!addBtn) return
   if (!db) {
+    console.error("[Admin] Database (db) not initialized");
     showMessage("Database not ready yet. Please try again.", "error")
     return
   }
 
   const title = document.getElementById("promoTitle").value.trim()
   const content = document.getElementById("promoContent").value.trim()
+  const valid_from = document.getElementById("promoFrom").value
   const valid_until = document.getElementById("promoUntil").value
   const photoFile = document.getElementById("promo_photo").files[0]
 
@@ -1633,7 +1722,7 @@ window.addPromoSubmit = async function addPromoSubmit() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
-  const parseValidUntil = (v) => {
+  const parseValidDate = (v) => {
     if (!v) return null
     const s = String(v).trim()
     if (!s) return null
@@ -1642,7 +1731,9 @@ window.addPromoSubmit = async function addPromoSubmit() {
     return d
   }
 
-  const untilDate = parseValidUntil(valid_until)
+  const fromDate = parseValidDate(valid_from)
+  const untilDate = parseValidDate(valid_until)
+  
   if (untilDate) {
     untilDate.setHours(0, 0, 0, 0)
     if (untilDate <= today) {
@@ -1658,6 +1749,7 @@ window.addPromoSubmit = async function addPromoSubmit() {
   try {
     let imageUrl = null
     if (photoFile) {
+        console.log("[Admin] Uploading promo photo...");
         const timestamp = Date.now()
         const fileName = `promo_${timestamp}`
         const { error: uploadError } = await db.storage.from('product-photos').upload(fileName, photoFile)
@@ -1674,11 +1766,24 @@ window.addPromoSubmit = async function addPromoSubmit() {
     const payload = { 
         title, 
         content, 
+        valid_from: fromDate ? fromDate.toISOString().split('T')[0] : null,
         valid_until: untilDate ? untilDate.toISOString().split('T')[0] : null,
         image_url: imageUrl
     }
+    
+    console.log("[Admin] Inserting promo payload:", payload);
 
-    const { error } = await db.from("promos").insert([payload])
+    let { error } = await db.from("promos").insert([payload])
+    
+    // Fallback if valid_from doesn't exist in schema yet
+    if (error && (error.message.includes("valid_from") || error.code === "PGRST204")) {
+        console.warn("[Admin] valid_from column missing, retrying without it");
+        const fallbackPayload = { ...payload };
+        delete fallbackPayload.valid_from;
+        const retry = await db.from("promos").insert([fallbackPayload]);
+        error = retry.error;
+    }
+    
     if (error) throw error
     
     if (window.logAdminAction) await logAdminAction("Added promo", title)
@@ -1704,6 +1809,7 @@ function attachPromoHandlers() {
       const id = document.getElementById("promoEditId").value
       const title = document.getElementById("promoTitle").value.trim()
       const content = document.getElementById("promoContent").value.trim()
+      const valid_from = document.getElementById("promoFrom").value
       const valid_until = document.getElementById("promoUntil").value
       const photoFile = document.getElementById("promo_photo").files[0]
 
@@ -1756,6 +1862,7 @@ function attachPromoHandlers() {
         const updateData = { 
             title, 
             content, 
+            valid_from: valid_from || null,
             valid_until: untilDate ? untilDate.toISOString().split('T')[0] : null 
         }
         if (imageUrl) updateData.image_url = imageUrl
@@ -2495,6 +2602,12 @@ window.renderBookingsList = async () => {
       const rawStatus = d.status || "pending"
       let displayStatus = rawStatus.toUpperCase()
       let badgeClassStatus = rawStatus.toLowerCase()
+      
+      // Point 2 & 4: Partial Payment should display as Completed
+      if (rawStatus === 'partial_payment' || rawStatus === 'PARTIAL_PAYMENT') {
+          displayStatus = 'COMPLETED'
+          badgeClassStatus = 'completed'
+      }
       
       // If status is PAID or ACCEPTED, show as PREPARING to match kitchen dashboard
       if (rawStatus === 'paid' || rawStatus === 'PAID' || rawStatus === 'accepted' || rawStatus === 'ACCEPTED') {

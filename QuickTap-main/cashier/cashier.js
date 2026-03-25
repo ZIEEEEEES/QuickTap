@@ -2089,6 +2089,18 @@ window.updateKioskStatus = async (orderId, status, btn = null) => {
       if (normalizedStatus === 'preparing' && orderData && orderData.payment_method === 'online' && orderData.status === 'pending') {
           console.log("[System Log] Recording Online Kiosk Order in Sales (Accepted):", orderId)
           await recordKioskSale(orderData)
+          
+          // AUTO-PRINT RECEIPT for online orders upon acceptance
+          try {
+              const items = typeof orderData.items === 'string' ? JSON.parse(orderData.items) : (orderData.items || [])
+              const total = Number(orderData.finalTotal || orderData.total || 0)
+              const discount = Number(orderData.discount || 0)
+              const orderNum = orderData.order_number || String(orderData.id).slice(-4)
+              console.log("[System Log] Printing receipt for Online Kiosk Order:", orderNum)
+              openReceiptWindow(items, total, total, discount, orderNum)
+          } catch (printErr) {
+              console.warn("[System Log] Auto-print failed:", printErr)
+          }
       }
 
       if (normalizedStatus === 'completed') {
@@ -3123,6 +3135,18 @@ window.updatePreorderStatus = async (id, status, btn = null) => {
             // Record sale if it was pending
             if (bookingData && bookingData.status === 'pending') {
                 await recordKioskSale({ ...bookingData, source: 'bookings' });
+                
+                // AUTO-PRINT RECEIPT for pre-orders upon acceptance
+                try {
+                    const items = typeof bookingData.items === 'string' ? JSON.parse(bookingData.items) : (bookingData.items || [])
+                    const total = Number(bookingData.total || 0)
+                    const discount = Number(bookingData.discount || 0)
+                    const orderNum = bookingData.id ? `B${bookingData.id}` : ""
+                    console.log("[System Log] Printing receipt for Pre-order:", orderNum)
+                    openReceiptWindow(items, total, total, discount, orderNum)
+                } catch (printErr) {
+                    console.warn("[System Log] Pre-order auto-print failed:", printErr)
+                }
             }
         }
 

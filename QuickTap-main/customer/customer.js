@@ -845,33 +845,33 @@ function renderCustomerNotifications(list) {
     
     if (isPaymentConfirmed) {
       item.innerHTML = `
-        <div class="notification-title" style="color: #2e7d32;">✅ Payment Confirmed</div>
+        <div class="notification-title" style="color: #2e7d32;">Payment Confirmed</div>
         <div class="notification-meta">Order #${n.order_id || "--"}</div>
         <div class="notification-meta">Your remaining balance has been settled at the counter. Thank you!</div>
         <div style="margin-top: 10px; font-size: 0.85em; color: #2e7d32; font-weight: 700;">
-          ✨ Order is now fully paid.
+          Order is now fully paid.
         </div>
       `
       item.style.borderLeft = "5px solid #2e7d32"
       item.style.background = "#e8f5e9"
     } else if (isOrderConfirmed) {
       item.innerHTML = `
-        <div class="notification-title" style="color: #2e7d32;">✅ Order Confirmed</div>
+        <div class="notification-title" style="color: #2e7d32;">Order Confirmed</div>
         <div class="notification-meta">Order #${n.order_id || "--"}</div>
         <div class="notification-meta">${n.message}</div>
         <div style="margin-top: 10px; font-size: 0.85em; color: #2e7d32; font-weight: 700;">
-          🔥 Your order is now being prepared.
+          Your order is now being prepared.
         </div>
       `
       item.style.borderLeft = "5px solid #2e7d32"
       item.style.background = "#e8f5e9"
     } else if (isOrderRejected) {
       item.innerHTML = `
-        <div class="notification-title" style="color: #d32f2f;">❌ Order Rejected</div>
+        <div class="notification-title" style="color: #d32f2f;">Order Rejected</div>
         <div class="notification-meta">Order #${n.order_id || "--"}</div>
         <div class="notification-meta">${n.message}</div>
         <div style="margin-top: 10px; font-size: 0.85em; color: #d32f2f; font-weight: 700;">
-          ⚠️ Please contact support or try again.
+          Please contact support or try again.
         </div>
       `
       item.style.borderLeft = "5px solid #d32f2f"
@@ -882,7 +882,7 @@ function renderCustomerNotifications(list) {
         <div class="notification-meta">Order #${n.order_id || "--"} - Remaining Balance: \u20B1 ${remaining.toFixed(2)}</div>
         <div class="notification-meta">${n.message || "Please pay the remaining balance upon pickup."}${isFallback ? " (synced from order)" : ""}</div>
         <div style="margin-top: 10px; font-size: 0.85em; color: var(--coffee-medium); font-style: italic;">
-          ℹ️ Please settle the remaining balance at the counter during pickup.
+          Please settle the remaining balance at the counter during pickup.
         </div>
       `
     }
@@ -1006,12 +1006,34 @@ async function handleNotificationClick(notificationId) {
   fetchCustomerNotifications({ autoOpen: false }).catch(() => {})
 }
 
-window.openCustomerNotifications = () => {
+window.openCustomerNotifications = async () => {
   lastNoticeSeen = Date.now()
   localStorage.setItem(CUSTOMER_NOTICE_KEY, String(lastNoticeSeen))
   customerNoticeCount = 0
   const modal = document.getElementById("customerNotificationsModal")
   if (modal) modal.style.display = "flex"
+  
+  // NEW: Automatically mark all notifications as seen when the customer opens the panel
+  if (Array.isArray(customerNotifications)) {
+    const unreadIds = customerNotifications
+      .filter(n => String(n.status || "unread").toLowerCase() === "unread" && !String(n.id || "").startsWith("fallback-"))
+      .map(n => n.id)
+    
+    if (unreadIds.length > 0) {
+      try {
+        // Mark all unread notifications as seen in the database
+        await Promise.all(unreadIds.map(id => markNotificationSeen(id)))
+        // Update local state so the badge disappears immediately
+        customerNotifications.forEach(n => {
+          if (unreadIds.includes(n.id)) n.status = "seen"
+        })
+        updateCustomerBell(customerNoticeCount) // customerNoticeCount is already 0
+      } catch (err) {
+        console.warn("[v0] Failed to mark notifications as seen:", err)
+      }
+    }
+  }
+  
   fetchCustomerNotifications({ autoOpen: true }).catch(() => {})
 }
 
@@ -4546,20 +4568,30 @@ async function runTrackOrder() {
             else if (displayStatus === "Pending") badgeStyle = "background:#ffeb3b;color:#333;" 
             else badgeStyle = "background:#ffeb3b;color:#333;" // Default fallback
 
-            let itemContent = `<div style="font-weight:700; color:var(--coffee-dark);">${itemCount} items</div>`
+            let qtyContent = ""
+            let productContent = ""
+            
+            if (items.length === 0) {
+              qtyContent = "-"
+              productContent = "No items"
+            } else {
+              qtyContent = items.map(i => `<div style="margin-bottom: 4px;">${i.quantity || i.qty || 1}x</div>`).join("")
+              productContent = items.map(i => `<div style="margin-bottom: 4px; font-weight: 600;">${i.name || i.product || "Item"}</div>`).join("")
+            }
+
             if (isPreorder) {
               const poDate = d.date || "N/A"
               const poTime = d.pickup_time || d.time || "N/A"
-              itemContent = `<div style="font-weight:800;color:#d4a574;text-transform:uppercase;font-size:10px;letter-spacing:1px;margin-bottom:4px;">Pre-order</div>
-                             <div style="font-weight:700; color:var(--coffee-dark);">${itemCount} items</div>
-                             <div style="font-size:12px;color:#888;margin-top:4px;"><i class="fa-regular fa-clock" style="margin-right:4px;"></i>${poDate} ${poTime}</div>`
+              productContent += `<div style="font-weight:800;color:#d4a574;text-transform:uppercase;font-size:9px;letter-spacing:1px;margin-top:8px;">Pre-order Pickup</div>
+                                 <div style="font-size:11px;color:#888;margin-top:2px;"><i class="fa-regular fa-clock" style="margin-right:4px;"></i>${poDate} ${poTime}</div>`
             }
 
             tr.innerHTML = `
-              <td data-label="Items">${itemContent}</td>
-              <td data-label="Total" style="font-weight:800; color:var(--coffee-dark); font-size:16px;">\u20B1${Number(orderTotal).toFixed(2)}</td>
-              <td data-label="Status"><span class="${badgeClass}" style="${badgeStyle}">${displayStatus}</span>${confirmationNotice}${insufficientPaymentWarning}</td>
-              <td data-label="${isHistory ? 'Date' : 'Placed At'}" style="color:#888; font-size:13px;">${ts}</td>
+              <td data-label="Qty" style="vertical-align: top;">${qtyContent}</td>
+              <td data-label="Product" style="vertical-align: top;">${productContent}</td>
+              <td data-label="Total" style="font-weight:800; color:var(--coffee-dark); font-size:16px; vertical-align: top;">\u20B1${Number(orderTotal).toFixed(2)}</td>
+              <td data-label="Status" style="vertical-align: top;"><span class="${badgeClass}" style="${badgeStyle}">${displayStatus}</span>${confirmationNotice}${insufficientPaymentWarning}</td>
+              <td data-label="${isHistory ? 'Date' : 'Placed At'}" style="color:#888; font-size:13px; vertical-align: top;">${ts}</td>
             `
             return tr
       }
@@ -4621,6 +4653,24 @@ async function runTrackOrder() {
               : ((d.check_in_time && d.check_out_time) ? `${d.check_in_time} - ${d.check_out_time}` : (d.time || ""))
             const type = d.type === "preorder" ? "Pre-order" : "Visit"
             
+            // Extract items if pre-order
+            let items = d.items
+            if (typeof items === 'string') {
+                try { items = JSON.parse(items) } catch(e) { items = [] }
+            }
+            items = items || []
+            
+            let qtyContent = "-"
+            let productContent = "-"
+            
+            if (d.type === "preorder" && items.length > 0) {
+              qtyContent = items.map(i => `<div style="margin-bottom: 2px;">${i.quantity || i.qty || 1}x</div>`).join("")
+              productContent = items.map(i => `<div style="margin-bottom: 2px; font-weight: 600;">${i.name || i.product || "Item"}</div>`).join("")
+            } else if (d.type === "visit") {
+              qtyContent = "-"
+              productContent = "Table Booking"
+            }
+            
             // Point 5: Check for reschedule
             const log = rescheduleLogs.find(l => String(l.booking_id) === String(d.id))
             let rescheduleNotice = ""
@@ -4662,12 +4712,12 @@ async function runTrackOrder() {
             }
             
             // Status Mapping (Match the active orders style)
-            const insuff = resolveInsufficientInfo(d)
+            const insuffStatus = resolveInsufficientInfo(d)
             let displayStatus = d.status || "Pending"
             const isPaid = d.paymentStatus === 'paid' || d.status === 'paid' || d.status === 'PAID'
             const s = String(d.status || "").toLowerCase()
             
-            if (insuff.hasMarker) {
+            if (insuffStatus.hasMarker) {
                  displayStatus = "Pending"
             } else if (s === 'preparing' || s === 'accepted' || isPaid) {
                  // Once accepted or paid, it's considered in preparation for the customer
@@ -4713,12 +4763,14 @@ async function runTrackOrder() {
               `<div style="font-weight:800;color:#2196F3;text-transform:uppercase;font-size:10px;letter-spacing:1px;margin-bottom:4px;">${type}</div>`
 
             tr.innerHTML = `
-              <td data-label="Type">${typeLabel}</td>
-              <td data-label="Date" style="font-weight:700; color:var(--coffee-dark);">${date}</td>
-              <td data-label="Time" style="font-weight:700; color:var(--coffee-dark);">${time}</td>
-              <td data-label="Status"><span class="${badgeClass}" style="${badgeStyle}">${displayStatus}</span>${rescheduleNotice}</td>
-              <td data-label="Reason" style="font-size:13px; color:#666;">${reasonDisplay}</td>
-              <td data-label="Placed At" style="font-size:12px; color:#888;">${ts}</td>
+              <td data-label="Qty" style="vertical-align: top;">${qtyContent}</td>
+              <td data-label="Product" style="vertical-align: top;">${productContent}</td>
+              <td data-label="Type" style="vertical-align: top;">${typeLabel}</td>
+              <td data-label="Date" style="font-weight:700; color:var(--coffee-dark); vertical-align: top;">${date}</td>
+              <td data-label="Time" style="font-weight:700; color:var(--coffee-dark); vertical-align: top;">${time}</td>
+              <td data-label="Status" style="vertical-align: top;"><span class="${badgeClass}" style="${badgeStyle}">${displayStatus}</span>${rescheduleNotice}</td>
+              <td data-label="Reason" style="font-size:13px; color:#666; vertical-align: top;">${reasonDisplay}</td>
+              <td data-label="Placed At" style="font-size:12px; color:#888; vertical-align: top;">${ts}</td>
             `
             bookingBody.appendChild(tr)
           })

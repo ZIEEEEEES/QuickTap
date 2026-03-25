@@ -212,20 +212,21 @@
           <h2>Menu Management</h2>
           <p class="description">Manage your cafe's menu items, categories, and prices.</p>
         </div>
-        <div class="menu-header">
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button id="toggleAddFormBtn" class="btn-toggle-form" onclick="toggleAddForm()">+ Add New Product</button>
-            <button id="toggleMenuArchiveBtn" class="btn-secondary" onclick="toggleMenuArchiveView()">Show Archived</button>
+        <div class="menu-header" id="menuControls">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items: center;">
+             <button id="toggleAddFormBtn" class="btn-toggle-form" onclick="toggleAddForm()">+ Add New Product</button>
+             <button id="toggleMenuArchiveBtn" class="btn-secondary" onclick="toggleMenuArchiveView()">Show Archived</button>
+             
+             <div class="search-container" style="position: relative; margin-left: 10px;">
+               <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888;"></i>
+               <input type="text" id="menuSearch" placeholder="Search products..." oninput="searchMenu(this.value)" style="padding-left: 35px !important; border-radius: 8px; border: 1px solid #ddd; height: 40px; width: 250px;">
+             </div>
+           </div>
           </div>
-        </div>
         <div id="statusMessage"></div>
         
-        <!-- Search and Category Filter -->
+        <!-- Category Filter -->
         <div class="menu-controls" id="menuControls">
-          <div class="search-box">
-            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" id="menuSearch" placeholder="Search products..." oninput="searchMenu(this.value)">
-          </div>
           <div class="category-filter">
             <button onclick="filterMenuCategory('all', this)" class="active">All</button>
             <button onclick="filterMenuCategory('1', this)">Coffee</button>
@@ -338,6 +339,10 @@
           </div>
           <div class="form-row compact-row">
             <div class="form-group">
+                <label for="promoFrom">Valid From</label>
+                <input type="date" id="promoFrom" onchange="updatePromoPreview()">
+            </div>
+            <div class="form-group">
                 <label for="promoUntil">Valid Until</label>
                 <input type="date" id="promoUntil" onchange="updatePromoPreview()">
             </div>
@@ -383,6 +388,7 @@
             <th style="width: 80px;">Photo</th>
             <th>Title</th>
             <th>Details</th>
+            <th>Valid From</th>
             <th>Valid Until</th>
             <th style="width: 120px;">Actions</th>
           </tr>
@@ -573,9 +579,8 @@
           Source
           <select id="anSource" onchange="runDashboard()">
             <option value="all" selected>All</option>
-            <option value="sales">POS Sales</option>
-            <option value="orders">Line Items</option>
-            <option value="pending">Kiosk (Completed)</option>
+            <option value="sales">Walk-ins</option>
+            <option value="pending">Customer Terminal</option>
           </select>
         </label>
         <label>
@@ -593,7 +598,7 @@
             <option value="quantity">By Quantity</option>
           </select>
         </label>
-        <label>
+        <label style="display:none">
           Chart type
           <select id="descType" disabled>
             <option value="line" selected>Line</option>
