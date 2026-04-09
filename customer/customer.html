@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Customer Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Slab:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../global-styles.css">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="../supabase-init.js"></script>
+</head>
+<body>
+  <!-- Dashboard Header (Matched to Provided Image) -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <div class="header-logo" onclick="location.href='../index.html'">
+        <img src="../images/tori.jpg" alt="Tori Logo">
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="burger-menu-btn" onclick="toggleMobileNav()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Floating Actions (Vertical Stack on Right) -->
+  <div class="floating-actions">
+    <button id="orderDrawerBtn" class="action-btn cart-btn" onclick="toggleOrderDrawer()">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <span class="badge" id="orderCartBadge"></span>
+    </button>
+    <button id="customerBell" class="action-btn bell-btn" onclick="openCustomerNotifications()">
+      <i class="fa-solid fa-bell"></i>
+      <span id="customerBellBadge" class="bell-badge"></span>
+    </button>
+  </div>
+
+  <!-- Navigation Menu (Slide-out Overlay) -->
+  <nav id="mainNav" class="sidebar-nav">
+    <div class="sidebar-header">
+      <button class="menu-close-btn" onclick="toggleMobileNav()">✕</button>
+    </div>
+    
+    <div class="nav-links">
+      <button class="nav-btn" onclick="showPage('menu')" data-page="menu">
+        <i class="fa-solid fa-mug-hot"></i>
+        <span class="nav-label">MENU</span>
+      </button>
+      <button class="nav-btn" onclick="showPage('promos')" data-page="promos">
+        <i class="fa-solid fa-tag"></i>
+        <span class="nav-label">PROMOS</span>
+      </button>
+      <button class="nav-btn" onclick="showPage('spin')" data-page="spin">
+        <i class="fa-solid fa-dharmachakra"></i>
+        <span class="nav-label">SPIN</span>
+      </button>
+      <button class="nav-btn" id="navBook" onclick="showPage('book')" data-page="book">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span class="nav-label">BOOK</span>
+      </button>
+      <button class="nav-btn" id="navLoyalty" onclick="showPage('loyalty')" data-page="loyalty">
+        <i class="fa-solid fa-id-card"></i>
+        <span class="nav-label">CARD</span>
+      </button>
+      <button class="nav-btn" id="navTrack" onclick="showPage('track')" data-page="track">
+        <i class="fa-solid fa-truck-fast"></i>
+        <span class="nav-label">TRACK</span>
+      </button>
+      <button class="nav-btn" onclick="customerLogout()" style="transition: opacity 0.2s ease;">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span class="nav-label">LOGOUT</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-nav-overlay" onclick="toggleMobileNav()"></div>
+
+  <!-- Item Details Modal -->
+  <div id="itemModal" class="item-modal" onclick="if(event.target === this) closeItemModal()">
+    <div class="item-modal-content">
+      <div class="item-modal-close" onclick="closeItemModal()">&times;</div>
+      <div id="modalImg" class="item-modal-img"></div>
+      <div class="item-modal-info">
+        <h2 id="modalTitle" class="item-modal-title">Item Name</h2>
+        <p id="modalDesc" class="item-modal-desc">Item description goes here.</p>
+        
+        <div id="modalTempSection">
+          <div class="modal-section-title">Temperature</div>
+          <div class="modal-temp-options">
+            <button id="tempCold" class="modal-temp-btn" onclick="setModalTemp('Cold')">
+              <i class="fas fa-snowflake"></i> Cold
+            </button>
+            <button id="tempHot" class="modal-temp-btn active" onclick="setModalTemp('Hot')">
+              <i class="fas fa-mug-hot"></i> Hot
+            </button>
+          </div>
+        </div>
+        
+        <div class="modal-section-title">Select Size</div>
+        <div id="modalSizeGrid" class="modal-size-grid"></div>
+        
+        <button class="modal-add-btn" onclick="handleModalAdd()">
+          <i class="fas fa-cart-plus"></i>
+          <span>Add to Cart</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pre-order Cart Drawer -->
+  <button id="preorderDrawerBtn" class="order-drawer-btn preorder-btn" onclick="togglePreorderDrawer()" title="Pre-order Cart" style="display:none; background-color: var(--preorder-accent);">
+    <span class="cart-icon">🛒</span>
+    <span class="cart-badge" id="preorderCartBadge"></span>
+  </button>
+
+  <div id="preorderDrawer" class="order-drawer">
+    <div class="order-drawer-header" style="background: linear-gradient(135deg, var(--preorder-accent), var(--preorder-accent-hover));">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 24px;">📅</span>
+        <h3 style="margin: 0; font-size: 1.2rem; letter-spacing: 0.5px;">Pre-order Cart</h3>
+      </div>
+      <button class="order-drawer-close" onclick="closePreorderDrawer()">✕</button>
+    </div>
+    
+    <div id="preorderMsg" class="order-drawer-msg"></div>
+    
+    <div class="order-drawer-content">
+      <div id="preorderItemsContainer" class="cart-items-container">
+        <!-- Pre-order items will be rendered here -->
+      </div>
+      
+      <div id="emptyPreorderMessage" class="empty-cart-message" style="display: none;">
+        <div class="empty-cart-icon">☕</div>
+        <p>No pre-orders yet</p>
+      </div>
+    </div>
+    
+    <div class="order-drawer-footer">
+      <div class="cart-summary">
+        <div class="summary-row total">
+          <span>Total</span>
+          <span>₱<span class="preorder-total-display">0.00</span></span>
+        </div>
+      </div>
+      
+      <div class="cart-actions">
+        <button class="btn-checkout" onclick="openPreorderModal()" style="background: var(--preorder-accent);">
+          <span>Confirm Pre-order</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="orderDrawer" class="order-drawer">
+    <div class="order-drawer-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 24px;">🛒</span>
+        <h3 style="margin: 0; font-size: 1.2rem; letter-spacing: 0.5px;">Your Shopping Cart</h3>
+      </div>
+      <button class="order-drawer-close" onclick="closeOrderDrawer()">✕</button>
+    </div>
+    
+    <div id="custOrderMsg" class="order-drawer-msg"></div>
+    
+    <div class="order-drawer-content">
+      <div id="cartItemsContainer" class="cart-items-container">
+        <!-- Cart items will be rendered here as cards -->
+      </div>
+      
+      <div id="emptyCartMessage" class="empty-cart-message" style="display: none;">
+        <div class="empty-cart-icon">🛍️</div>
+        <p>Your cart is empty</p>
+        <button class="btn-secondary" onclick="closeOrderDrawer()">Start Shopping</button>
+      </div>
+    </div>
+    
+    <div class="order-drawer-footer">
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span>₱<span id="cartSubtotal">0.00</span></span>
+        </div>
+        <div class="summary-row">
+          <span>VAT (12%)</span>
+          <span>₱<span id="cartVat">0.00</span></span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span>₱<span id="custOrderTotal">0.00</span></span>
+        </div>
+      </div>
+      
+      <div class="cart-actions">
+        <button id="checkoutNowBtn" class="btn-checkout" onclick="openPaymentModal()">
+          <span>Checkout Now</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add login prompt section shown for guests -->
+  <div id="guestPrompt" class="guest-prompt-banner" style="display:none;">
+    <div class="guest-prompt-content">
+      <div class="prompt-icon">🔑</div>
+      <div class="prompt-info">
+        <h3>Want to Save Your Orders?</h3>
+        <p>Log in or create an account to track orders, earn loyalty points, and access exclusive deals!</p>
+      </div>
+      <button class="prompt-action-btn" onclick="showAuthModal()">Sign In / Register</button>
+    </div>
+  </div>
+
+  <!-- Modal for guest login/signup -->
+  <div id="authModal" class="auth-modal" style="display:none;">
+    <div class="auth-modal-content">
+      <button class="modal-close" onclick="closeAuthModal()">✕</button>
+      <h3>Log In or Create Account</h3>
+      <div id="authMessage"></div> <!-- Added authMessage container -->
+      <input id="modalEmail" placeholder="Email" class="input-field">
+      <input id="modalPhone" placeholder="Phone Number (optional)" class="input-field">
+      <input id="modalName" placeholder="Full Name" class="input-field">
+      <input id="modalPassword" type="password" placeholder="Password" class="input-field">
+      <button onclick="registerFromModal()" class="btn-primary full-width">Register</button>
+      <button onclick="loginFromModal()" class="btn-primary full-width">Login</button>
+      <div id="modalMessage"></div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <!-- Pre-order Modal -->
+  <div id="preorderModal" class="auth-modal" style="display:none;" onclick="if(event.target === this) closePreorderModal()">
+    <div class="auth-modal-content" style="max-width: 850px; width: 95%; height: 90vh; display: flex; flex-direction: column; position: relative; border-top: 6px solid var(--preorder-accent); padding: 0; overflow: hidden;">
+      <!-- Header -->
+      <div style="padding: 12px 20px 5px; flex-shrink: 0; position: relative;">
+        <button class="modal-close" onclick="closePreorderModal()" style="background: #eee; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; position: absolute; top: 10px; right: 15px; border: none; cursor: pointer;">✕</button>
+        
+        <button onclick="togglePreorderDrawer()" style="position: absolute; top: 10px; right: 60px; background: var(--preorder-accent); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10;">
+          <span style="font-size: 1rem;">🛒</span>
+        </button>
+
+        <h3 style="color: var(--coffee-dark); display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1.1rem;">
+          <span>🛍️</span> Pre-order Menu
+        </h3>
+      </div>
+      
+      <!-- Scrollable Body -->
+      <div id="preorderScrollArea" style="flex: 1; overflow-y: auto; padding: 0 15px 15px;">
+        <!-- Menu Selection View -->
+        <div id="preorderMenuView">
+            <div style="margin: 10px 0; position: sticky; top: 0; background: white; z-index: 5; padding-bottom: 5px;">
+                <input type="text" id="preorderSearch" placeholder="Search pre-order items..." oninput="searchPreorderMenu(this.value)" class="input-field" style="width: 100%; border-color: var(--preorder-accent-light); box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 5px;">
+                
+                <div id="preorderCategories" class="category-filter" style="display: flex; gap: 8px; overflow-x: auto; padding: 5px 0; margin-top: 0; scrollbar-width: none; -ms-overflow-style: none;">
+                    <button onclick="filterPreorderCategory('All', this)" class="active" style="padding: 6px 15px; font-size: 0.85rem;">All Items</button>
+                    <button onclick="filterPreorderCategory('Coffee', this)" style="padding: 6px 15px; font-size: 0.85rem;">☕ Coffee</button>
+                    <button onclick="filterPreorderCategory('Non-coffee', this)" style="padding: 6px 15px; font-size: 0.85rem;">🥤 Non-coffee</button>
+                    <button onclick="filterPreorderCategory('Frappe', this)" style="padding: 6px 15px; font-size: 0.85rem;">🍨 Frappe</button>
+                    <button onclick="filterPreorderCategory('Soda', this)" style="padding: 6px 15px; font-size: 0.85rem;">Soda</button>
+                    <button onclick="filterPreorderCategory('Pastries', this)" style="padding: 6px 15px; font-size: 0.85rem;">🥐 Pastries</button>
+                </div>
+            </div>
+            
+            <div id="preorderMenuGrid" class="menu-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                <!-- Dynamic Menu Items -->
+            </div>
+        </div>
+        
+        <!-- Payment Details View -->
+        <div id="preorderPaymentSection" style="display: none; margin-top: 10px; padding-top: 10px;">
+            <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--preorder-accent);">
+                <h4 style="margin-top: 0; color: var(--coffee-dark); font-size: 1.1rem; margin-bottom: 10px;">Order Summary</h4>
+                <div id="preorderSummaryList" style="margin-bottom: 10px; font-size: 0.95rem; color: #444;"></div>
+                <div style="font-weight: bold; font-size: 1.2rem; border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px;">
+                    Total: <span style="color: var(--preorder-accent);">₱<span class="preorder-total-display">0.00</span></span>
+                </div>
+            </div>
+
+            <h4 style="margin-top: 0; color: var(--coffee-dark); font-size: 1.1rem; margin-bottom: 15px;">Payment Method</h4>
+            <div class="payment-options" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: nowrap;">
+                <label class="preorder-payment-option" style="cursor: pointer; display: flex; align-items: center; gap: 6px; background: #f9f9f9; padding: 8px 10px; border-radius: 8px; border: 1px solid #eee; flex: 1; min-width: 0;">
+                        <input type="radio" name="preorderPaymentMethod" value="cash" checked onchange="togglePreorderPayment()">
+                        <span class="option-label" style="display: inline-flex; flex-direction: column; font-weight: 500; font-size: 0.9rem;">
+                            <span>Cash</span>
+                        </span>
+                    </label>
+                    <label class="preorder-payment-option" style="cursor: pointer; display: flex; align-items: center; gap: 6px; background: #f9f9f9; padding: 8px 10px; border-radius: 8px; border: 1px solid #eee; flex: 1; min-width: 0;">
+                        <input type="radio" name="preorderPaymentMethod" value="online" onchange="togglePreorderPayment()">
+                        <span class="option-label" style="display: inline-flex; flex-direction: column; font-weight: 500; font-size: 0.9rem;">
+                            <span>Online via QR</span>
+                        </span>
+                    </label>
+            </div>
+            
+            <div id="preorderPaymentOnline" style="display:none; background: #f9f9f9; padding: 20px; border-radius: 12px; border: 2px dashed var(--preorder-accent-light); margin-bottom: 20px;">
+                <p style="margin: 0 0 15px; font-size: 0.95em; font-weight: 600; color: var(--coffee-dark);">Scan QR Code and attach receipt:</p>
+                <div style="text-align: center; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; display: inline-block; width: 100%; box-sizing: border-box;">
+                    <img id="preorderQrDisplay" src="" alt="QR Code" style="max-width: 200px; max-height: 250px; object-fit: contain; border-radius: 8px; display: none; margin: 0 auto;">
+                    <div id="preorderQrPlaceholder" style="color: #888; font-size: 0.9em; padding: 40px; background: #f0f0f0; border-radius: 8px;">Loading QR...</div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label style="display: block; margin-bottom: 8px; font-size: 0.85em; font-weight: 600; color: #666;">Upload Receipt Image:</label>
+                    <input type="file" id="preorderProof" accept="image/*" class="input-field" style="width: 100%; padding: 10px; background: white;" onchange="validateReceiptImage(this)">
+                    <div id="preorderProofWarning" style="margin-top: 8px; padding: 10px; border-radius: 6px; font-size: 0.85em; display: none;"></div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <!-- Message Area -->
+      <div id="preorderStatusMessage" style="padding: 0 20px;"></div>
+
+      <!-- Fixed Footer -->
+      <div class="preorder-modal-footer" style="padding: 15px 20px; border-top: 1px solid #eee; background: #fff; flex-shrink: 0; display: flex; gap: 12px; justify-content: flex-end; box-shadow: 0 -4px 10px rgba(0,0,0,0.03);">
+          <button id="preorderBackBtn" onclick="showPreorderMenuView()" class="btn-secondary" style="display: none; min-width: 120px; padding: 12px 20px;">Back to Menu</button>
+          <button id="preorderCancelBtn" onclick="closePreorderModal()" class="btn-secondary" style="min-width: 150px; padding: 12px 20px;">Cancel</button>
+          <button id="preorderNextBtn" onclick="showPreorderPaymentView()" class="btn-preorder-submit" style="min-width: 180px; padding: 12px 20px;">Proceed to Payment</button>
+          <button id="preorderSubmitBtn" onclick="submitBooking()" class="btn-preorder-submit" style="display: none; min-width: 180px; padding: 12px 20px;">Confirm Pre-order</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="paymentModal" class="auth-modal" style="display:none;">
+    <div class="auth-modal-content" style="max-width: 500px;">
+      <button class="modal-close" onclick="closePaymentModal()">✕</button>
+      <h3>Select Payment Method</h3>
+      
+      <div class="payment-options" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: nowrap;">
+        <label class="payment-option" style="cursor: pointer; display: flex; align-items: center; gap: 6px; background: #f9f9f9; padding: 8px 10px; border-radius: 8px; border: 1px solid #eee; flex: 1; min-width: 0;">
+          <input type="radio" name="paymentMethod" value="cash" checked onchange="togglePaymentDetails()">
+          <span class="option-label" style="display: inline-flex; flex-direction: column; font-weight: 500; font-size: 0.9rem;">Cash</span>
+        </label>
+        <label class="payment-option" style="cursor: pointer; display: flex; align-items: center; gap: 6px; background: #f9f9f9; padding: 8px 10px; border-radius: 8px; border: 1px solid #eee; flex: 1; min-width: 0;">
+          <input type="radio" name="paymentMethod" value="online" onchange="togglePaymentDetails()">
+          <span class="option-label" style="display: inline-flex; flex-direction: column; font-weight: 500; font-size: 0.9rem;">Online via QR</span>
+        </label>
+      </div>
+
+      <div id="paymentDetailsOnline" style="display:none; margin-top: 15px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+        <p class="description">Scan QR Code to pay:</p>
+        <div style="text-align: center; margin-bottom: 15px;">
+           <img id="customerQrDisplay" src="" alt="Admin QR Code" style="max-width: 200px; display: none;">
+           <div id="customerQrPlaceholder" style="color: #888; font-style: italic;">Loading QR Code...</div>
+        </div>
+        
+        <label for="paymentProof" style="display: block; margin-bottom: 5px; font-weight: bold;">Attach Proof of Payment (Receipt):</label>
+        <input type="file" id="paymentProof" accept="image/*" class="input-field" onchange="validateReceiptImage(this, 'payment')">
+        <div id="paymentProofWarning" style="margin-top: 8px; padding: 10px; border-radius: 6px; font-size: 0.85em; display: none;"></div>
+      </div>
+
+      <div id="paymentDetailsCash" style="margin-top: 15px;">
+        <p>Please proceed to the cashier to pay for your order.</p>
+      </div>
+
+      <div id="paymentMessage"></div>
+      <div style="display: flex; gap: 10px; margin-top: 15px; position: sticky; bottom: 0; background: white; padding-top: 10px; border-top: 1px solid #eee;">
+        <button onclick="closePaymentModal()" class="btn-secondary" style="flex: 1;">Cancel</button>
+        <button onclick="confirmPaymentAndOrder()" class="btn-primary" style="flex: 1;">Confirm Order</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="repayModal" class="auth-modal" style="display:none;">
+    <div class="auth-modal-content" style="max-width: 520px;">
+      <button class="modal-close" onclick="closeRepayModal()">✕</button>
+      <h3>Additional Payment Required</h3>
+      <div id="repayOrderInfo" style="margin-bottom: 10px; font-weight: 600;"></div>
+
+      <div class="payment-options" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: nowrap;">
+        <label class="payment-option" style="cursor: pointer; display: flex; align-items: center; gap: 6px; background: #f9f9f9; padding: 8px 10px; border-radius: 8px; border: 1px solid #eee; flex: 1; min-width: 0;">
+          <input type="radio" name="repayPaymentMethod" value="cash" onchange="toggleRepayDetails()">
+          <span class="option-label" style="display: inline-flex; flex-direction: column; font-weight: 500; font-size: 0.9rem;">Cash</span>
+        </label>
+        <label class="payment-option" style="cursor: pointer; display: flex; align-items: center; gap: 6px; background: #f9f9f9; padding: 8px 10px; border-radius: 8px; border: 1px solid #eee; flex: 1; min-width: 0;">
+          <input type="radio" name="repayPaymentMethod" value="online" checked onchange="toggleRepayDetails()">
+          <span class="option-label" style="display: inline-flex; flex-direction: column; font-weight: 500; font-size: 0.9rem;">Online via QR</span>
+        </label>
+      </div>
+
+      <div id="repayDetailsOnline" style="margin-top: 15px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+        <p class="description">Scan QR Code to pay:</p>
+        <div style="text-align: center; margin-bottom: 15px;">
+          <img id="repayQrDisplay" src="" alt="Admin QR Code" style="max-width: 200px; display: none;">
+          <div id="repayQrPlaceholder" style="color: #888; font-style: italic;">Loading QR Code...</div>
+        </div>
+
+        <label for="repayProof" style="display: block; margin-bottom: 5px; font-weight: bold;">Attach Proof of Payment (Receipt):</label>
+        <input type="file" id="repayProof" accept="image/*" class="input-field" onchange="validateReceiptImage(this, 'repay')">
+        <div id="repayProofWarning" style="margin-top: 8px; padding: 10px; border-radius: 6px; font-size: 0.85em; display: none;"></div>
+      </div>
+
+      <div id="repayDetailsCash" style="display:none; margin-top: 15px;">
+        <p>Please prepare the remaining amount and pay at the cashier.</p>
+      </div>
+
+      <div id="repayMessage"></div>
+      <div style="display: flex; gap: 10px; margin-top: 15px; position: sticky; bottom: 0; background: white; padding-top: 10px; border-top: 1px solid #eee;">
+        <button onclick="closeRepayModal()" class="btn-secondary" style="flex: 1;">Cancel</button>
+        <button onclick="confirmRepay()" class="btn-primary" style="flex: 1;">Submit Payment</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="customerNotificationsModal" class="auth-modal" style="display:none;">
+    <div class="auth-modal-content" style="max-width: 560px;">
+      <button class="modal-close" onclick="closeCustomerNotifications()">x</button>
+      <h3>Notifications</h3>
+      <div id="customerNotificationsList" class="notification-list"></div>
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <button onclick="closeCustomerNotifications()" class="btn-secondary" style="flex: 1;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPIN THE WHEEL PAGE -->
+  <div id="spin" class="page" style="display:none;">
+    <div class="wheel-header-container">
+      <h2 class="wheel-title">Spin the Wheel!</h2>
+    </div>
+
+    <div class="wheel-dashboard-layout">
+      <!-- LEFT SECTION -->
+      <div class="wheel-left-section">
+        <div class="category-header-tag">Category:</div>
+        <div id="wheelCatsList" class="wheel-categories-list">
+          <div class="wheel-cat-item active" onclick="toggleWheelCat(event, this)">
+            <span>Coffee</span>
+            <input type="checkbox" value="Coffee" checked>
+          </div>
+          <div class="wheel-cat-item active" onclick="toggleWheelCat(event, this)">
+            <span>Non-coffee</span>
+            <input type="checkbox" value="Non-coffee" checked>
+          </div>
+          <div class="wheel-cat-item active" onclick="toggleWheelCat(event, this)">
+            <span>Frappe</span>
+            <input type="checkbox" value="Frappe" checked>
+          </div>
+          <div class="wheel-cat-item active" onclick="toggleWheelCat(event, this)">
+            <span>Soda</span>
+            <input type="checkbox" value="Soda" checked>
+          </div>
+          <div class="wheel-cat-item active" onclick="toggleWheelCat(event, this)">
+            <span>Pastries</span>
+            <input type="checkbox" value="Pastries" checked>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER SECTION -->
+      <div class="wheel-center-section">
+        <div class="wheel-viz-container" onclick="spinTheWheel()">
+          <div class="wheel-pointer-top"></div>
+          <div class="wheel-fallback" aria-hidden="true"></div>
+          <div id="customerTapHint" class="tap-hint">Tap to Spin!</div>
+          <canvas id="wheelCanvas" width="1000" height="1000"></canvas>
+        </div>
+        <div id="winnerBox" class="wheel-result-box-new" aria-live="polite">
+          <span class="wheel-spark">✨</span>
+          <div class="wheel-result-content">
+            <div id="winnerText">Ready to Spin!</div>
+            <div id="winnerMeta" class="wheel-result-meta">Select categories to load items.</div>
+          </div>
+          <span class="wheel-spark">✨</span>
+        </div>
+        
+        <!-- Move Add Cart Button Bellow Winner Box -->
+        <div class="wheel-action-footer">
+          <button id="addCartWheelBtn" class="add-cart-action-btn" onclick="addWheelWinnerToCart()" style="display: none;">
+            ADD CART <i class="fa-solid fa-cart-shopping"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT SECTION -->
+      <div class="wheel-right-section" style="display: none;">
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU PAGE -->
+  <div id="menu" class="page" style="display:none;">
+    <div class="menu-top-section">
+      <div class="category-selector-container">
+        <div class="cat-pills">
+          <button class="cat-pill active" onclick="window.selectCategory('All', this)">All Items</button>
+          <button class="cat-pill" onclick="window.selectCategory('Coffee', this)">Coffee</button>
+          <button class="cat-pill" onclick="window.selectCategory('Non-coffee', this)">Non-coffee</button>
+          <button class="cat-pill" onclick="window.selectCategory('Frappe', this)">Frappe</button>
+          <button class="cat-pill" onclick="window.selectCategory('Soda', this)">Soda</button>
+          <button class="cat-pill" onclick="window.selectCategory('Pastries', this)">Pastries</button>
+        </div>
+      </div>
+
+      <div class="search-bar-container">
+        <input type="text" id="menuSearch" placeholder="Search menu items..." oninput="searchMenu(this.value)" class="menu-search-input">
+      </div>
+    </div>
+    
+    <div id="menuList" class="menu-grid"></div>
+  </div>
+
+  <!-- BOOKING PAGE -->
+  <div id="book" class="page" style="display:none;">
+    <div class="book-header-container">
+      <h2 class="book-title">Book a Visit or Pre-Order?</h2>
+    </div>
+
+    <div class="booking-options-card">
+      <div class="choose-transaction-label">Choose your transaction</div>
+      <div class="booking-cards-container">
+        <div class="booking-choice-card" onclick="openPreorderSetup()">
+          <span class="choice-title">Pre-orders</span>
+        </div>
+        <div class="booking-choice-card" onclick="openVisitSetup()">
+          <span class="choice-title">Book a Visit</span>
+        </div>
+      </div>
+      <div class="booking-description">
+        <p>- Pre-order: choose pickup date/time, then select items in the menu and checkout.</p>
+        <p>- Visit: choose date and check-in/check-out time.</p>
+      </div>
+    </div>
+
+    <!-- Hidden fields kept for existing booking/order logic -->
+    <div style="display:none;">
+      <select id="bookType" onchange="updateBookingUI()">
+        <option value="visit">visit</option>
+        <option value="preorder">preorder</option>
+      </select>
+      <input id="custDate" type="date" min="" max="">
+      <input id="checkInTime" type="time">
+      <input id="checkOutTime" type="time">
+      <input id="custTime" type="time">
+      <input type="hidden" id="preorderItems">
+    </div>
+  </div>
+
+  <!-- Pre-order Setup Modal -->
+  <div id="preorderSetupModal" class="auth-modal" style="display:none;" onclick="if(event.target === this) closePreorderSetup()">
+    <div class="auth-modal-content" style="max-width: 480px; padding: 40px; border-radius: 24px;">
+      <button class="modal-close" onclick="closePreorderSetup()" style="top: 20px; right: 20px;">✕</button>
+      <h3 style="margin-top:0; font-size: 1.6rem; margin-bottom: 30px;">Pre-order Setup</h3>
+      <div id="preorderSetupMsg"></div>
+      
+      <div class="input-group" style="margin-bottom: 20px;">
+        <label style="font-weight:700; display:block; margin-bottom: 8px; font-size: 0.9rem;">Pickup Date <span style="color: var(--danger);">*</span></label>
+        <input id="preorderPickupDate" type="date" class="input-field" style="margin-bottom: 0;">
+      </div>
+      
+      <div class="input-group" style="margin-bottom: 25px;">
+        <label style="font-weight:700; display:block; margin-bottom: 8px; font-size: 0.9rem;">Pickup Time <span style="color: var(--danger);">*</span></label>
+        <input id="preorderPickupTime" type="time" class="input-field" min="08:00" max="18:00" style="margin-bottom: 0;">
+      </div>
+
+      <div class="modal-buttons" style="display:flex; flex-direction: column; gap:12px; margin-top: 10px;">
+        <button class="btn-primary" style="width: 100%; padding: 16px; border-radius: 12px; font-size: 1rem;" onclick="proceedPreorderSetup()">Continue to Menu</button>
+        <button class="btn-secondary" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 0.95rem; background: transparent; border: 2px solid #eee;" onclick="closePreorderSetup()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visit Setup Modal -->
+  <div id="visitSetupModal" class="auth-modal" style="display:none;" onclick="if(event.target === this) closeVisitSetup()">
+    <div class="auth-modal-content" style="max-width: 480px; padding: 40px; border-radius: 24px;">
+      <button class="modal-close" onclick="closeVisitSetup()" style="top: 20px; right: 20px;">✕</button>
+      <h3 style="margin-top:0; font-size: 1.6rem; margin-bottom: 30px;">Book a Visit</h3>
+      <div id="visitSetupMsg"></div>
+      
+      <div class="input-group" style="margin-bottom: 20px;">
+        <label style="font-weight:700; display:block; margin-bottom: 8px; font-size: 0.9rem;">Visit Date <span style="color: var(--danger);">*</span></label>
+        <input id="visitDate" type="date" class="input-field" style="margin-bottom: 0;">
+      </div>
+      
+      <div style="display:flex; gap:15px; margin-bottom: 30px;">
+        <div style="flex:1;">
+          <label style="font-weight:700; display:block; margin-bottom: 8px; font-size: 0.9rem;">Check-in <span style="color: var(--danger);">*</span></label>
+          <input id="visitCheckIn" type="time" class="input-field" min="08:00" max="18:00" style="margin-bottom: 0;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-weight:700; display:block; margin-bottom: 8px; font-size: 0.9rem;">Check-out <span style="color: var(--danger);">*</span></label>
+          <input id="visitCheckOut" type="time" class="input-field" min="08:00" max="18:00" style="margin-bottom: 0;">
+        </div>
+      </div>
+
+      <div class="modal-buttons" style="display:flex; flex-direction: column; gap:12px; margin-top: 10px;">
+        <button class="btn-primary" style="width: 100%; padding: 16px; border-radius: 12px; font-size: 1rem;" onclick="submitVisitFromModal()">Submit Visit</button>
+        <button class="btn-secondary" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 0.95rem; background: transparent; border: 2px solid #eee;" onclick="closeVisitSetup()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Processing Modal -->
+  <div id="processingModal" class="auth-modal" style="display:none;">
+    <div class="auth-modal-content" style="text-align: center; padding: 40px 30px; max-width: 350px;">
+      <div class="processing-spinner" style="margin: 0 auto 20px;"></div>
+      <h3 id="processingModalTitle" style="margin-top:0; color: var(--coffee-dark);">Order is on process</h3>
+      <p id="processingModalText" style="color: #666; line-height: 1.5;">Please wait while we handle your request...</p>
+    </div>
+  </div>
+
+  <!-- Order Confirmed Modal -->
+  <div id="orderConfirmedModal" class="auth-modal" style="display:none;" onclick="if(event.target === this) closeOrderConfirmedModal()">
+    <div class="auth-modal-content" style="max-width: 520px; text-align: center;">
+      <button class="modal-close" onclick="closeOrderConfirmedModal()">✕</button>
+      <h3 style="margin-top:0;">Order Confirmed</h3>
+      <div id="orderConfirmedText" style="margin-top: 8px; color: #444; line-height: 1.5;"></div>
+      <div style="display:flex; gap:10px; margin-top: 18px;">
+        <button class="btn-secondary" style="flex:1;" onclick="closeOrderConfirmedModal()">OK</button>
+        <button class="btn-primary" style="flex:1;" onclick="goToTrackAfterConfirm()">Go to Track</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loyalty" class="page" style="display:none;">
+    <div class="loyalty-header-container">
+      <h2 class="loyalty-title">Loyalty Card</h2>
+    </div>
+
+    <div class="loyalty-main-card">
+      <div class="loyalty-header-mobile">Loyalty Card</div>
+      <div class="loyalty-card-id-section">
+        <span class="section-label">CARD ID</span>
+        <div class="card-id-display-box">
+          <span id="loyaltyCardDisplay">899436</span>
+          <button class="copy-id-btn" onclick="copyLoyaltyCard()">COPY</button>
+        </div>
+      </div>
+
+      <div class="loyalty-stamps-section">
+        <div class="stamps-header">
+          <h3>COLLECT 10 STAMPS FOR A FREE DRINK!</h3>
+          <p id="stampsMessage">10/10 Stamps (You have 36 Free Drinks!)</p>
+        </div>
+        <div id="stampGrid" class="loyalty-stamp-grid">
+          <!-- 10 slots -->
+        </div>
+      </div>
+
+      <div class="loyalty-actions">
+        <button id="redeemBtn" class="redeem-btn" onclick="openRedeemModal()">REDEEM FREE DRINK (10 PTS)</button>
+      </div>
+
+      <div class="loyalty-balance-section">
+        <span class="balance-label">Points Balance</span>
+        <div class="balance-amount" id="loyaltyPointsDisplay">0</div>
+      </div>
+    </div>
+
+    <!-- Redemption Modal -->
+    <div id="redeemModal" class="auth-modal" style="display:none;">
+      <div class="auth-modal-content" style="max-width: 500px; padding: 0; display: flex; flex-direction: column; max-height: 85vh;">
+        <!-- Fixed Header -->
+        <div style="padding: 30px 30px 10px 30px; border-bottom: 1px solid #eee;">
+          <button class="modal-close" onclick="closeRedeemModal()" style="top: 20px; right: 20px;">✕</button>
+          <h3 style="color: var(--coffee-dark); margin: 0; text-align: center;">Choose Your Free Drink</h3>
+          <p style="text-align: center; color: #666; font-size: 0.9rem; margin: 10px 0 0 0;">Pick any 16oz drink from our menu!</p>
+        </div>
+        
+        <!-- Scrollable Content -->
+        <div style="padding: 20px 30px; overflow-y: auto; flex: 1;">
+          <div id="redeemMessage" style="margin-bottom: 15px;"></div>
+          <div id="redeemDrinkList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px;">
+            <!-- Drinks will be loaded here -->
+          </div>
+        </div>
+        
+        <!-- Fixed Footer -->
+        <div style="padding: 20px 30px; border-top: 1px solid #eee; background: #fff;">
+          <button id="confirmRedeemBtn" onclick="submitRedemption()" class="btn-primary full-width" disabled>Confirm Selection</button>
+        </div>
+      </div>
+    </div>
+
+    <table id="loyaltyTable" style="display:none">
+      <thead>
+        <tr><th>Date</th><th>Purchase</th><th>Points Earned</th></tr>
+      </thead>
+      <tbody id="loyaltyBody"></tbody>
+    </table>
+  </div>
+
+  <!-- PROMOS PAGE -->
+  <div id="promos" class="page" style="display:none;">
+    <div class="promo-header-container">
+      <h2 class="promo-title">Promos & Announcements</h2>
+    </div>
+    <div id="promoList" class="promo-container-layout">
+      <!-- Promos will be rendered here -->
+    </div>
+  </div>
+
+  <!-- TRACK PAGE -->
+  <div id="track" class="page" style="display:none;">
+    <div class="track-header-container">
+      <h2 class="track-title">Order Tracking</h2>
+    </div>
+    
+    <div id="trackContent" class="track-main-content">
+      <div id="trackSyncStatus" style="display:none;"></div>
+      
+      <div class="track-section">
+        <h3>Active Orders</h3>
+        <div class="table-responsive">
+          <table class="track-table">
+            <thead>
+              <tr><th>Qty</th><th>Product</th><th>Total</th><th>Status</th><th>Reason</th><th>Placed At</th></tr>
+            </thead>
+            <tbody id="trackBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="track-section">
+        <h3>Order History</h3>
+        <div class="table-responsive">
+          <table class="track-table" style="opacity: 0.8;">
+            <thead>
+              <tr><th>Qty</th><th>Product</th><th>Total</th><th>Status</th><th>Reason</th><th>Date</th></tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="track-section">
+        <h3>Your Bookings</h3>
+        <div class="table-responsive">
+          <table class="track-table">
+            <thead>
+              <tr><th>Qty</th><th>Product</th><th>Type</th><th>Date</th><th>Time</th><th>Status</th><th>Reason</th><th>Placed At</th></tr>
+            </thead>
+            <tbody id="bookingBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="cartToast" class="cart-toast">Your order added to the cart</div>
+
+  <script>
+    // Set date restrictions for booking modals
+    document.addEventListener('DOMContentLoaded', function() {
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      
+      // Get end of current year
+      const endOfYear = new Date(today.getFullYear(), 11, 31);
+      const endOfYearStr = endOfYear.toISOString().split('T')[0];
+      
+      const visitDateInput = document.getElementById('visitDate');
+      const preorderPickupDateInput = document.getElementById('preorderPickupDate');
+      
+      if (visitDateInput) {
+        visitDateInput.min = todayStr;
+        visitDateInput.max = endOfYearStr;
+      }
+      
+      if (preorderPickupDateInput) {
+        preorderPickupDateInput.min = todayStr;
+        preorderPickupDateInput.max = endOfYearStr;
+      }
+
+      // Initialize promos when showPage is called
+      const originalShowPage = window.showPage;
+      window.showPage = function(page) {
+        if (typeof originalShowPage === 'function') {
+          originalShowPage(page);
+        }
+        // Load promos when navigating to promos page
+        if (page === 'promos') {
+          setTimeout(() => {
+            if (typeof window.loadPromos === 'function') {
+              window.loadPromos();
+            }
+            if (typeof window.subscribeToPromosRealtime === 'function') {
+              window.subscribeToPromosRealtime();
+            }
+          }, 100);
+        }
+      };
+
+      // Also load promos immediately if promo list is visible
+      setTimeout(() => {
+        const promoList = document.getElementById('promoList');
+        if (promoList && typeof window.loadPromos === 'function') {
+          window.loadPromos();
+          if (typeof window.subscribeToPromosRealtime === 'function') {
+            window.subscribeToPromosRealtime();
+          }
+        }
+      }, 1000);
+    });
+  </script>
+
+  <script src="./customer.js"></script>
+</body>
+</html>

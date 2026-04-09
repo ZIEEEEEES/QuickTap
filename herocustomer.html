@@ -1,0 +1,2557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>QuickTap - Tori Cafeteria</title>
+  <link rel="stylesheet" href="global-styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Slab:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js"></script>
+  <script src="staff-auth.js"></script>
+  <style>
+    :root {
+      --bg-cream: #F8F4E1;
+      --accent-tan: #AF8F6F;
+      --accent-brown: #74512D;
+      --accent-warm: #AF8F6F;
+      --coffee-dark: #543310;
+      --coffee-medium: #74512D;
+      --cream: #F8F4E1;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      font-family: 'Inter', sans-serif;
+      background-color: #543310; /* Match navbar to prevent any white lining gaps */
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 5%;
+      height: 80px;
+      background: #543310;
+      border-bottom: none;
+      position: sticky;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      box-sizing: border-box;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      margin-bottom: 0 !important; /* Override global-styles.css margin-bottom */
+    }
+
+    .nav-container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-left-content {
+      display: flex;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .nav-logo {
+      position: static;
+      transform: none;
+      z-index: 1001;
+    }
+
+    .nav-logo img {
+      height: 50px;
+      width: auto;
+      background: transparent; /* Changed from white to transparent */
+      padding: 0;
+      border-radius: 50%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 25px;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .btn-signin {
+      background: transparent;
+      color: white;
+      border: 1.5px solid white;
+      padding: 8px 20px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-signin:hover {
+      background: white;
+      color: var(--coffee-dark);
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: white !important; /* Explicitly white */
+      font-weight: 500;
+      font-size: 16px;
+      transition: all 0.3s;
+      font-family: 'Inter', sans-serif;
+      position: relative;
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+
+    .nav-links a:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-links a.active {
+      font-weight: 700;
+    }
+
+    .nav-links a.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      height: 3px;
+      background-color: white;
+    }
+
+    .btn-signin {
+      background-color: var(--coffee-dark);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 700;
+      transition: all 0.3s;
+      border: 1.5px solid white;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .btn-signin:hover {
+      background-color: white;
+      color: var(--coffee-dark);
+    }
+
+    /* Mobile Menu Button */
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 1001;
+      padding: 10px;
+    }
+
+    .mobile-menu-close {
+      display: none;
+      position: absolute;
+      top: 25px;
+      right: 25px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 28px;
+      cursor: pointer;
+    }
+
+    /* Remove the design class as it's now in global body */
+    .coffee-bean-design { display: none; }
+
+    /* Specific beans removed as per image request */
+    .hero-left::before { display: none; }
+
+    /* Page Views */
+    .page-view {
+      display: none;
+      min-height: calc(100vh - 80px);
+      width: 100%;
+      position: relative;
+      background-image: url('images/frappe_toricafe.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    @media (max-width: 768px) {
+      .page-view {
+        background-attachment: scroll;
+      }
+    }
+
+    .page-view::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(84, 51, 16, 0.7); /* More transparent overlay to show bg image */
+      z-index: 0;
+    }
+
+    .page-view.active {
+      display: block;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* HERO VIEW (Home) */
+    .hero-container {
+      display: flex;
+      min-height: calc(100vh - 80px);
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      background: none !important;
+    }
+
+    .hero-container::before {
+      display: none !important;
+    }
+
+    .hero-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 5%;
+      position: relative;
+      z-index: 2;
+      background: none !important;
+    }
+
+    .hero-left h1 {
+      font-size: clamp(52px, 12vw, 96px);
+      line-height: 1.1;
+      margin-bottom: 35px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      text-transform: uppercase;
+      color: white;
+      text-shadow: 0 6px 25px rgba(0,0,0,0.9);
+    }
+
+    .hero-left p {
+      font-size: clamp(16px, 2.5vw, 22px);
+      margin-bottom: 45px;
+      opacity: 0.95;
+      line-height: 1.6;
+      max-width: 580px;
+      color: white;
+      font-weight: 500;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+      letter-spacing: 0.3px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .btn-hero {
+      padding: 18px 60px;
+      border-radius: 50px;
+      font-weight: 800;
+      font-size: 22px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border: 2px solid transparent;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-hero-signup {
+      background-color: var(--accent-tan);
+      color: white;
+      box-shadow: 0 10px 20px rgba(175, 143, 111, 0.3);
+    }
+
+    .btn-hero-signup:hover {
+      background-color: var(--accent-brown);
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba(175, 143, 111, 0.4);
+    }
+
+    .btn-hero-login {
+      background-color: transparent;
+      color: white;
+      border-color: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(5px);
+    }
+
+    .btn-hero-login:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: white;
+      transform: translateY(-3px);
+    }
+
+    .hero-visual {
+      flex: 1.2;
+      position: relative;
+      z-index: 1;
+      min-height: 500px;
+      overflow: hidden;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .hero-visual-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      transition: opacity 2s ease-in-out, transform 8s ease-out;
+      opacity: 0;
+      transform: scale(1.1);
+    }
+
+    .hero-visual-img.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .hero-visual::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, rgba(84, 51, 16, 1) 0%, rgba(84, 51, 16, 0) 20%);
+      z-index: 2;
+    }
+
+    /* Hero Responsive Adjustments */
+    @media (max-width: 1200px) {
+      .hero-left h1 { font-size: 80px; }
+      .hero-left p { font-size: 18px; }
+    }
+
+    @media (max-width: 992px) {
+      .hero-container { flex-direction: column; }
+      .hero-left { 
+        padding: 40px 5%; 
+        text-align: center; 
+        align-items: center;
+        order: 2;
+      }
+      .hero-left p { 
+        margin-left: auto; 
+        margin-right: auto; 
+        font-size: 16px;
+        max-width: 480px;
+      }
+      .hero-visual { 
+        order: 1; 
+        min-height: 350px; 
+        width: 100%;
+        border-radius: 0 0 40px 40px;
+      }
+      .hero-left h1 { font-size: 60px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-left h1 { font-size: 42px; }
+      .hero-left p { font-size: 15px; }
+      .hero-buttons { flex-direction: column; width: 100%; }
+      .btn-hero { width: 100%; padding: 15px 30px; font-size: 18px; }
+      .hero-visual { min-height: 250px; }
+    }
+
+    .menu-view {
+      padding: 50px 8%;
+      position: relative;
+      color: white;
+      text-align: center;
+      background: transparent;
+    }
+
+    /* .menu-view::before removed - using global page-view::before */
+
+    .menu-header {
+      max-width: 900px; /* Increased to prevent clipping */
+      margin: 0 auto 50px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .search-box {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50px;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.25);
+      border: 1.5px solid rgba(175, 143, 111, 0.3);
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 18px;
+      margin-left: 15px;
+      color: var(--coffee-dark);
+      background: transparent;
+    }
+
+    .search-box input::placeholder {
+      color: #999;
+      font-size: 18px;
+    }
+
+    .search-box i { color: var(--accent-tan); font-size: 20px; }
+
+    .cat-pills {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap; /* Allow wrapping to prevent cut-off */
+      padding: 10px 0;
+      width: 100%;
+      max-width: 1000px; /* Increased max-width for pills specifically */
+      margin: 0 auto;
+    }
+
+    .cat-pill {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      font-size: 1rem;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+      flex: 0 1 auto; /* Allow shrinking if needed */
+    }
+
+    .cat-pill:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+      border-color: white;
+    }
+
+    .cat-pill.active {
+      background: var(--accent-tan);
+      border-color: var(--accent-tan);
+      box-shadow: 0 6px 20px rgba(175, 143, 111, 0.5);
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 768px) {
+      .cat-pills {
+        flex-wrap: wrap; /* Allow wrapping on mobile */
+        justify-content: center;
+      }
+      .cat-pill {
+        padding: 8px 18px;
+        font-size: 0.9rem;
+      }
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+      gap: 30px;
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    @media (max-width: 1200px) {
+      .menu-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 20px; }
+    }
+
+    @media (max-width: 992px) {
+      .menu-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 15px; }
+    }
+
+    @media (max-width: 480px) {
+      .menu-grid { grid-template-columns: 1fr !important; gap: 12px; padding: 0 10px; }
+    }
+
+    .menu-card {
+      background: #F8F4E1;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-12px) scale(1.02);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.3);
+    }
+
+    .menu-card-img-wrapper {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 1/1;
+      width: 100%;
+    }
+
+    .menu-card img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+      transition: transform 0.5s ease;
+    }
+
+    .menu-card:hover img {
+      transform: scale(1.1);
+    }
+
+    .menu-card-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .menu-card:hover .menu-card-overlay {
+      opacity: 1;
+    }
+
+    .view-details {
+      color: white;
+      font-weight: 700;
+      font-size: 1.2rem;
+      border: 2px solid white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      background: rgba(0,0,0,0.2);
+    }
+
+    /* Modal for Item Details */
+    .item-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 4000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      backdrop-filter: blur(8px);
+    }
+
+    .item-modal-content {
+      background: #F8F4E1;
+      border-radius: 30px;
+      width: 95%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      position: relative;
+      animation: modalScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @media (max-width: 768px) {
+      .item-modal-content {
+        flex-direction: column;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      .item-modal-img {
+        min-height: 250px !important;
+        width: 100% !important;
+      }
+      .item-modal-info {
+        padding: 25px !important;
+      }
+      .item-modal-title {
+        font-size: 28px !important;
+      }
+    }
+
+    @keyframes modalScaleUp {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .item-modal-img {
+      flex: 1.2;
+      height: auto;
+      min-height: 400px;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .item-modal-info {
+      flex: 1;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      color: var(--coffee-dark);
+      overflow-y: auto;
+      max-height: 90vh;
+    }
+
+    .item-modal-close {
+      position: absolute;
+      top: 20px;
+      right: 25px;
+      font-size: 30px;
+      color: var(--coffee-dark);
+      cursor: pointer;
+      z-index: 10;
+      background: rgba(255,255,255,0.8);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    .item-modal-close:hover {
+      background: white;
+      transform: rotate(90deg);
+    }
+
+    .item-modal-title {
+      font-family: 'Roboto Slab', serif;
+      font-size: 36px;
+      margin: 0 0 15px 0;
+      font-weight: 800;
+    }
+
+    .item-modal-desc {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 25px;
+      color: #555;
+    }
+
+    .modal-section-title {
+      font-weight: 800;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+      color: var(--accent-brown);
+    }
+
+    .modal-temp-options {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .modal-temp-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 15px;
+      border: 2px solid #ddd;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 700;
+      transition: all 0.3s;
+    }
+
+    .modal-temp-btn.active {
+      border-color: var(--accent-tan);
+      background: var(--accent-tan);
+      color: white;
+      box-shadow: 0 5px 15px rgba(175, 143, 111, 0.3);
+    }
+
+    .modal-size-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 15px;
+      margin-bottom: 35px;
+    }
+
+    .modal-size-btn {
+      padding: 15px;
+      border-radius: 15px;
+      border: 2px solid #ddd;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.3s;
+    }
+
+    .modal-size-btn.active {
+      border-color: var(--accent-tan);
+      background: #FFF9F0;
+      box-shadow: 0 5px 15px rgba(175, 143, 111, 0.15);
+    }
+
+    .modal-size-btn .size-name { font-weight: 800; font-size: 1.1rem; }
+    .modal-size-btn .size-price { font-weight: 600; color: var(--accent-brown); }
+
+    .modal-order-btn {
+      margin-top: auto;
+      padding: 18px;
+      border-radius: 50px;
+      border: none;
+      background: var(--coffee-dark);
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-order-btn:hover {
+      background: var(--accent-tan);
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(175, 143, 111, 0.4);
+    }
+
+    @media (max-width: 850px) {
+      .item-modal-content { flex-direction: column; width: 90%; max-height: 90vh; }
+      .item-modal-img { min-height: 250px; flex: none; }
+      .item-modal-info { padding: 25px; }
+      .item-modal-title { font-size: 28px; }
+    }
+
+    /* WHEEL VIEW */
+    .wheel-view {
+      padding: 50px 8%;
+      position: relative;
+      color: white;
+      text-align: center;
+      background: transparent;
+    }
+
+    .wheel-title {
+      font-family: 'Roboto Slab', serif;
+      font-size: 64px;
+      margin-bottom: 50px;
+      border-bottom: 4px solid var(--accent-tan);
+      display: inline-block;
+      padding-bottom: 10px;
+      color: #ffffff;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      position: relative;
+      z-index: 1;
+      font-weight: 800;
+    }
+
+    .wheel-layout {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      gap: 50px;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .wheel-cats-panel {
+      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+      padding: 40px;
+      border-radius: 28px;
+      border: 2px solid rgba(255,255,255,0.15);
+      height: fit-content;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .wheel-cats-panel::before {
+      content: 'CATEGORY';
+      display: block;
+      font-family: 'Roboto Slab', serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 24px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding-bottom: 16px;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+    }
+
+    .wheel-cat-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, var(--accent-brown) 0%, #5a3f25 100%);
+      padding: 16px 24px;
+      border-radius: 14px;
+      margin-bottom: 14px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 16px;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 1.5px solid rgba(255,255,255,0.1);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .wheel-cat-option:hover { 
+      background: linear-gradient(135deg, var(--accent-tan) 0%, #c89968 100%);
+      transform: translateX(8px);
+      box-shadow: 0 8px 25px rgba(175, 143, 111, 0.3);
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    .wheel-cat-option:active {
+      transform: translateX(6px) scale(0.98);
+    }
+
+    .wheel-cat-option input { 
+      width: 24px; 
+      height: 24px; 
+      accent-color: var(--coffee-dark); 
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .wheel-cat-option:hover input {
+      transform: scale(1.2);
+    }
+
+    .wheel-visual-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .wheel-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 650px;
+    }
+
+    .wheel-marker {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 40px solid #FFD700;
+      z-index: 10;
+      filter: drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 10px rgba(255,215,0,0.3));
+      animation: markerPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes markerPulse {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.1); }
+    }
+
+    canvas#wheelCanvas { 
+      width: 100%; 
+      height: auto; 
+      filter: drop-shadow(0 0 40px rgba(0,0,0,0.5));
+      transition: filter 0.3s ease;
+    }
+
+    .wheel-canvas-wrapper { 
+      cursor: pointer;
+      position: relative;
+    }
+
+    .wheel-canvas-wrapper:hover canvas#wheelCanvas {
+      filter: drop-shadow(0 0 50px rgba(175, 143, 111, 0.4));
+    }
+
+    .tap-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, rgba(84, 51, 16, 0.95) 0%, rgba(100, 60, 20, 0.95) 100%);
+      color: white;
+      padding: 24px 48px;
+      border-radius: 50px;
+      font-size: 26px;
+      font-weight: 800;
+      pointer-events: none;
+      letter-spacing: 0.5px;
+      border: 2px solid rgba(255,215,0,0.3);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      z-index: 20;
+      animation: pulseHint 1.5s infinite ease-in-out;
+      white-space: nowrap;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 3px solid var(--accent-tan);
+      transition: opacity 0.3s;
+    }
+
+    @keyframes pulseHint {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+    }
+
+    .result-badge {
+      margin-top: 45px;
+      background: white;
+      color: var(--coffee-dark);
+      padding: 18px 45px;
+      border-radius: 50px;
+      font-size: 26px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      opacity: 0;
+      transition: all 0.4s;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .result-badge.visible { opacity: 1; transform: scale(1.1); }
+
+    .btn-spin-action {
+      background: white;
+      color: var(--coffee-dark);
+      border: none;
+      padding: 18px 60px;
+      border-radius: 12px;
+      font-size: 36px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      font-family: 'Roboto Slab', serif;
+    }
+
+    .btn-spin-action:hover { transform: scale(1.1); background: var(--bg-cream); }
+
+    /* ABOUT VIEW - REDESIGNED 3-CARD LAYOUT */
+    .about-view {
+      padding: 40px 8%;
+      position: relative;
+      color: white;
+      text-align: center;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .card-base {
+      background: var(--bg-cream);
+      border-radius: 30px;
+      padding: 40px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      color: var(--coffee-dark);
+      position: relative;
+      z-index: 1;
+    }
+
+    .about-top-card {
+      display: flex;
+      gap: 50px;
+      align-items: stretch;
+      justify-content: space-between;
+    }
+
+    .about-left-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      align-items: flex-start;
+      justify-content: flex-start;
+    }
+
+    .about-title-box {
+      display: inline-block;
+      border: 3px solid var(--coffee-dark);
+      padding: 16px 36px;
+      margin-bottom: 16px;
+      font-family: 'Roboto Slab', serif;
+      font-weight: 800;
+      font-size: 30px;
+      letter-spacing: 0.8px;
+      background: transparent;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      text-transform: uppercase;
+      color: var(--coffee-dark);
+    }
+
+    .about-title-box:hover {
+      background: var(--coffee-dark);
+      color: white;
+      transform: translateX(5px);
+      box-shadow: 0 8px 20px rgba(84, 51, 16, 0.15);
+    }
+
+    .about-desc-box {
+      background: linear-gradient(135deg, var(--accent-tan) 0%, #bf8f5f 100%);
+      color: white;
+      padding: 44px;
+      border-radius: 22px;
+      font-size: 23px;
+      font-weight: 600;
+      line-height: 1.8;
+      max-width: 100%;
+      width: 100%;
+      box-shadow: 0 15px 50px rgba(175, 143, 111, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .about-desc-box::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: shimmer 8s infinite;
+    }
+
+    .about-desc-box > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translate(0, 0); }
+      50% { transform: translate(10px, 10px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    .about-logo-right {
+      flex: 0 0 auto;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 320px;
+      position: relative;
+    }
+
+    .about-logo-right::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(175, 143, 111, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      z-index: 0;
+    }
+
+    .about-logo-right img {
+      width: 100%;
+      max-width: 300px;
+      height: auto;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,0.15));
+      transition: transform 0.4s ease;
+    }
+
+    .about-logo-right img:hover {
+      transform: scale(1.05) translateY(-5px);
+    }
+
+    .about-bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+
+    .about-bottom-grid .card-base {
+      display: flex;
+      flex-direction: column;
+      transition: all 0.4s ease;
+    }
+
+    .about-bottom-grid .card-base:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    }
+
+    .find-us-card img {
+      width: 100%;
+      border-radius: 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      transition: transform 0.4s ease;
+    }
+
+    .find-us-card img:hover {
+      transform: scale(1.02);
+    }
+
+    .contact-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .contact-badge {
+      background: linear-gradient(135deg, var(--accent-brown) 0%, #5a3f25 100%);
+      color: white;
+      padding: 8px 18px;
+      border-radius: 25px;
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(84, 51, 16, 0.2);
+      letter-spacing: 0.5px;
+    }
+
+    .get-in-touch-title {
+      font-family: 'Roboto Slab', serif;
+      font-weight: 800;
+      font-size: 24px;
+      color: var(--coffee-dark);
+      letter-spacing: 0.3px;
+    }
+
+    .contact-item-box {
+      background: linear-gradient(135deg, var(--accent-tan) 0%, #bf8f5f 100%);
+      color: white;
+      padding: 20px 28px;
+      border-radius: 14px;
+      font-weight: 600;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 25px rgba(175, 143, 111, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+    }
+
+    .contact-item-box:hover {
+      transform: translateX(12px) translateY(-3px);
+      box-shadow: 0 12px 35px rgba(175, 143, 111, 0.25);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* BANNER */
+    .auth-banner {
+      background-color: var(--accent-tan);
+      padding: 45px;
+      margin-top: 30px;
+      border-radius: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 25px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+    }
+
+    .banner-left { display: flex; align-items: center; gap: 25px; }
+    .icon-key { width: 85px; height: 85px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 45px; }
+    .btn-auth-redirect { background: white; color: var(--coffee-dark); border: none; padding: 18px 45px; border-radius: 10px; font-weight: 800; font-size: 18px; cursor: pointer; transition: all 0.3s; }
+    .btn-auth-redirect:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .wheel-layout {
+        grid-template-columns: 1fr;
+        gap: 35px;
+      }
+
+      .wheel-cats-panel {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        height: auto;
+      }
+
+      .wheel-cats-panel::before {
+        grid-column: 1 / -1;
+      }
+
+      .wheel-cat-option {
+        margin-bottom: 0;
+      }
+
+      .wheel-canvas-wrapper {
+        max-width: 550px;
+      }
+
+      .about-top-card { 
+        flex-direction: column; 
+        text-align: center; 
+        align-items: center;
+        gap: 35px;
+      }
+      .about-left-content {
+        align-items: center;
+        gap: 24px;
+        width: 100%;
+      }
+      .about-title-box {
+        font-size: 28px;
+      }
+      .about-desc-box { 
+        max-width: 100%; 
+        font-size: 21px;
+      }
+      .about-logo-right { 
+        text-align: center; 
+        order: -1; 
+        min-width: auto;
+        width: 100%;
+      }
+      .about-logo-right img { max-width: 280px; }
+      .about-bottom-grid { grid-template-columns: 1fr; }
+
+      .menu-grid { 
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 35px;
+      }
+      
+      .menu-card-img-wrapper {
+        height: 240px;
+      }
+
+      .menu-view { padding: 40px 6%; }
+      .menu-header { max-width: 100%; margin-bottom: 35px; }
+    }
+
+    @media (max-width: 768px) {
+      .wheel-view {
+        padding: 40px 4%;
+      }
+
+      .wheel-title {
+        font-size: 48px;
+        margin-bottom: 35px;
+      }
+
+      .wheel-cats-panel {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 28px;
+        gap: 10px;
+      }
+
+      .wheel-cats-panel::before {
+        font-size: 16px;
+        margin-bottom: 16px;
+      }
+
+      .wheel-cat-option {
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+
+      .wheel-canvas-wrapper {
+        max-width: 100%;
+      }
+
+      .about-top-card { gap: 25px; }
+      .about-title-box {
+        font-size: 24px;
+        padding: 12px 28px;
+      }
+      .about-desc-box { 
+        padding: 32px;
+        font-size: 19px;
+      }
+      
+      .menu-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 20px;
+      }
+      
+      .menu-card-img-wrapper {
+        height: 200px;
+      }
+      
+      .menu-card-info h3 {
+        font-size: 20px;
+      }
+      
+      .menu-view { padding: 30px 4%; }
+    }
+
+    @media (min-width: 769px) {
+      .btn-signin-mobile { display: none !important; }
+    }
+
+    @media (max-width: 768px) {
+      .desktop-only-signin { display: none !important; }
+      .navbar { 
+        padding: 15px 20px; 
+        justify-content: space-between; 
+        background: #543310;
+        position: fixed;
+        height: 70px;
+      }
+      .nav-left-content { gap: 0; }
+      .nav-logo img { height: 45px; width: 45px; }
+      
+      .nav-right-mobile-group {
+        display: flex;
+        align-items: center;
+        gap: 8px; /* Closer buttons */
+      }
+
+      .mobile-menu-btn { 
+        display: block; 
+        background: transparent !important;
+        border: none;
+        padding: 0;
+        margin: 0;
+        box-shadow: none;
+        color: #fff !important; /* White icon only */
+        font-size: 24px;
+        cursor: pointer;
+        order: 2; /* Burger to the rightmost */
+      }
+
+      .btn-signin-mobile {
+        display: block !important;
+        background: transparent;
+        color: white;
+        border: 1.5px solid white;
+        padding: 6px 15px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: none !important;
+        order: 1; /* Sign in to the left of burger */
+      }
+      
+      .nav-links { 
+        display: none; 
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 100vh;
+        width: 280px;
+        background: rgba(84, 51, 16, 0.98);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        padding: 60px 30px;
+        box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+        z-index: 2000;
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-left: 1px solid rgba(255,255,255,0.1);
+      }
+      .nav-links.active { display: flex; animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+      .mobile-menu-close { display: block; top: 20px; right: 20px; }
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      .nav-links a { font-size: 20px; width: 100%; text-align: center; padding: 15px 0; border: none; font-weight: 600; color: white !important; }
+      .btn-signin { width: 80%; margin-top: 20px; padding: 12px; font-size: 16px; text-align: center; border-radius: 50px; border: 1.5px solid white; color: white; background: transparent; }
+      
+      .hero-container { 
+        flex-direction: column; 
+        padding-top: 80px; 
+        text-align: center;
+        min-height: auto;
+      }
+      .hero-visual { 
+        order: -1; 
+        min-height: 40vh; 
+        width: 100%; 
+        border-radius: 0 0 30px 30px;
+      }
+      .hero-left { 
+        padding: 40px 20px; 
+        align-items: center; 
+        min-height: auto;
+      }
+      .hero-left h1 { font-size: clamp(28px, 10vw, 36px); margin-bottom: 15px; font-weight: 900; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+      .hero-left p { font-size: 14px; margin-bottom: 25px; max-width: 100%; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.8); }
+      .hero-buttons { flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
+      .btn-hero { width: 100%; padding: 12px; border-radius: 50px; font-size: 16px; }
+
+      .wheel-view { display: flex; flex-direction: column; align-items: center; padding: 100px 20px 40px; }
+      .wheel-title { font-size: 28px; margin-bottom: 30px; text-align: center; position: relative; z-index: 10; }
+      .wheel-layout { grid-template-columns: 1fr; width: 100%; gap: 20px; margin-top: 0; }
+      .wheel-cats-panel { 
+        padding: 20px 15px; 
+        order: 2; 
+        width: 100%; 
+        display: block !important;
+        grid-template-columns: none !important;
+      }
+      .wheel-cats-panel::before { 
+        display: block !important;
+        font-size: 16px; 
+        margin-bottom: 15px !important;
+        padding-bottom: 12px !important;
+        border-bottom: 2px solid rgba(255,255,255,0.2) !important;
+        width: 100%;
+      }
+      .wheel-cat-option { 
+        padding: 12px 15px; 
+        font-size: 14px; 
+        margin-bottom: 10px; 
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .wheel-cat-option input { width: 18px; height: 18px; }
+      .wheel-visual-panel { order: 1; width: 100%; }
+      .wheel-column-action { display: none; } /* Hide the spin button section */
+      
+      .tap-hint {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(84, 51, 16, 0.95);
+        color: white;
+        padding: 15px 35px;
+        border-radius: 50px;
+        font-size: 22px;
+        font-weight: 800;
+        pointer-events: none;
+        z-index: 20;
+        animation: pulseHint 2s infinite ease-in-out;
+        white-space: nowrap;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+        border: 2px solid var(--accent-tan);
+        transition: opacity 0.4s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0;
+        display: none;
+      }
+
+      @keyframes pulseHint {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
+      }
+
+      .wheel-canvas-wrapper { cursor: pointer; }
+      .result-badge { margin-top: 20px; font-size: 18px; padding: 10px 30px; }
+
+      .about-view { 
+        padding: 100px 15px 60px; 
+        align-items: center; 
+        text-align: center;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .card-base { 
+        padding: 25px 20px; 
+        border-radius: 20px; 
+        width: 100%; 
+        max-width: 100%; 
+        box-sizing: border-box; 
+      }
+      .about-top-card { 
+        flex-direction: column; 
+        gap: 20px;
+        align-items: center;
+      }
+      .about-left-content {
+        width: 100%;
+        align-items: center;
+      }
+      .about-logo-right { 
+        order: -1; 
+        margin-bottom: 10px; 
+        min-width: auto;
+        width: 100%;
+      }
+      .about-logo-right img { max-width: 180px; margin: 0 auto; }
+      .about-title-box { 
+        font-size: 20px; 
+        margin-bottom: 15px; 
+        width: 100%; 
+        box-sizing: border-box;
+      }
+      .about-desc-box { 
+        font-size: 16px; 
+        padding: 20px; 
+        width: 100%; 
+        box-sizing: border-box; 
+      }
+      .about-bottom-grid { 
+        grid-template-columns: 1fr; 
+        gap: 20px; 
+        width: 100%; 
+      }
+      .contact-card-header { flex-direction: column; gap: 10px; }
+      .contact-item-box { font-size: 14px; padding: 12px; justify-content: center; }
+      
+      .menu-view { padding: 100px 15px 40px; }
+      .menu-header { max-width: 100%; margin-bottom: 30px; }
+      .search-box { width: 100%; margin-bottom: 20px; }
+      .cat-pills { display: flex; overflow-x: auto; white-space: nowrap; padding-bottom: 10px; justify-content: flex-start; -webkit-overflow-scrolling: touch; gap: 8px; }
+      .cat-pill { flex: 0 0 auto; }
+      
+      .menu-grid { 
+        grid-template-columns: repeat(2, 1fr) !important; /* 2 grid design */
+        gap: 12px; 
+        padding: 0 10px; 
+      }
+
+      .menu-card-img-wrapper { height: 140px; }
+      .menu-card-info { padding: 12px; gap: 8px; }
+      .menu-card-info h3 { font-size: 16px; margin-bottom: 5px; }
+      
+      .temp-option { font-size: 12px; padding: 4px 8px; }
+      .size-price-btn-hero { font-size: 11px; padding: 6px; }
+    }
+
+    /* Promo View Styles */
+    .promo-container-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 50px;
+      align-items: center;
+      padding-bottom: 60px;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 600px; /* Prevent container collapse and twitching */
+    }
+
+    .promo-card-new {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 32px;
+      width: 100%;
+      max-width: 1000px;
+      padding: 0;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      color: white;
+      text-align: left;
+      will-change: transform;
+    }
+
+    .promo-card-new:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .promo-image-new {
+      width: 100%;
+      max-height: 500px;
+      object-fit: contain;
+      background: rgba(0,0,0,0.1);
+      border-radius: 0;
+      display: block;
+    }
+
+    .promo-info-new {
+      padding: 40px;
+      background: transparent; /* Removed extra background to prevent twitching/artifacts */
+    }
+
+    .promo-title-new {
+      font-family: 'Roboto Slab', serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: white;
+      margin: 0 0 20px 0;
+    }
+
+    .promo-details-new {
+      font-size: 1.25rem;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.8;
+      margin-bottom: 30px;
+    }
+
+    .promo-footer-new {
+      padding: 24px 40px;
+      background: rgba(175, 143, 111, 0.2);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      color: white;
+    }
+
+    @media (max-width: 768px) {
+      .promo-title-new { font-size: 1.8rem; }
+      .promo-details-new { font-size: 1rem; }
+      .promo-info-new { padding: 25px; }
+      .promo-footer-new { padding: 15px 25px; font-size: 14px; }
+    }
+
+    /* Auth Modal Mobile Refinement */
+    @media (max-width: 500px) {
+      .auth-modal-content {
+        width: 90% !important;
+        padding: 25px 20px !important;
+        margin: 10px !important;
+      }
+      .auth-modal-content h3 { font-size: 24px; }
+      #heroAuthInputs input { padding: 12px; font-size: 16px; }
+      #loginActions button, #registerActions button { padding: 14px; font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-left-content">
+        <div class="nav-logo" onclick="navigateTo('home')" style="cursor: pointer;">
+          <img src="images/tori.jpg" alt="Tori Logo">
+        </div>
+      </div>
+      
+      <div class="nav-links" id="navLinks">
+        <button class="mobile-menu-close" onclick="toggleMobileMenu()">
+          <i class="fas fa-times"></i>
+        </button>
+        <a href="javascript:void(0)" onclick="navigateTo('home')" id="nav-home" class="active">Home</a>
+        <a href="javascript:void(0)" onclick="navigateTo('menu')" id="nav-menu">Menu</a>
+        <a href="javascript:void(0)" onclick="navigateTo('promos')" id="nav-promos">Promos</a>
+        <a href="javascript:void(0)" onclick="navigateTo('wheel')" id="nav-wheel">Wheel</a>
+        <a href="javascript:void(0)" onclick="navigateTo('about')" id="nav-about">About</a>
+      </div>
+
+      <div class="nav-right-mobile-group">
+        <!-- Mobile Menu Button -->
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Item Details Modal -->
+  <div id="itemModal" class="item-modal" onclick="if(event.target === this) closeItemModal()">
+    <div class="item-modal-content">
+      <div class="item-modal-close" onclick="closeItemModal()">&times;</div>
+      <div id="modalImg" class="item-modal-img"></div>
+      <div class="item-modal-info">
+        <h2 id="modalTitle" class="item-modal-title">Item Name</h2>
+        <p id="modalDesc" class="item-modal-desc">Item description goes here.</p>
+        
+        <div id="modalTempSection">
+          <div class="modal-section-title">Temperature</div>
+          <div class="modal-temp-options">
+            <button id="tempCold" class="modal-temp-btn" onclick="setModalTemp('Cold')">
+              <i class="fas fa-snowflake"></i> Cold
+            </button>
+            <button id="tempHot" class="modal-temp-btn active" onclick="setModalTemp('Hot')">
+              <i class="fas fa-mug-hot"></i> Hot
+            </button>
+          </div>
+        </div>
+        
+        <div class="modal-section-title">Select Size</div>
+        <div id="modalSizeGrid" class="modal-size-grid"></div>
+        
+        <button class="modal-order-btn" onclick="handleModalOrder()">
+          <i class="fas fa-shopping-cart"></i>
+          <span>Order Now</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME VIEW -->
+  <div id="view-home" class="page-view active">
+      <div class="hero-container">
+        <div class="hero-left">
+        <h1>ICED. BOLD. PERFECT.</h1>
+        <p>ENJOY THE PERFECT BLEND OF STRONG COFFEE AND ICE-COLD REFRESHMENT IN EVERY CUP.</p>
+        <div class="hero-buttons">
+          <button class="btn-hero btn-hero-signup" onclick="openAuthModal('signup')">Sign up</button>
+          <button class="btn-hero btn-hero-login" onclick="openAuthModal('login')">Login</button>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-visual-img active" style="background-image: url('images/frappe_toricafe.jpg');"></div>
+        <div class="hero-visual-img" style="background-image: url('images/pastries.jpg');"></div>
+      </div>
+    </div>
+
+    <script>
+      // Hero Image Crossfade Logic
+      const heroImages = document.querySelectorAll('.hero-visual-img');
+      let currentImgIndex = 0;
+
+      function rotateHeroImages() {
+        heroImages[currentImgIndex].classList.remove('active');
+        currentImgIndex = (currentImgIndex + 1) % heroImages.length;
+        heroImages[currentImgIndex].classList.add('active');
+      }
+
+      setInterval(rotateHeroImages, 6000); // Rotate every 6 seconds
+    </script>
+  </div>
+
+  <!-- MENU VIEW -->
+  <div id="view-menu" class="page-view">
+    <div class="menu-view">
+      <div class="menu-header">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="menuSearch" placeholder="Search menu items..." oninput="handleSearch()">
+        </div>
+        <div class="cat-pills">
+          <button class="cat-pill active" onclick="filterMenu('All')">All Items</button>
+          <button class="cat-pill" onclick="filterMenu('Coffee')">Coffee</button>
+          <button class="cat-pill" onclick="filterMenu('Non-coffee')">Non-coffee</button>
+          <button class="cat-pill" onclick="filterMenu('Frappe')">Frappe</button>
+          <button class="cat-pill" onclick="filterMenu('Soda')">Soda</button>
+          <button class="cat-pill" onclick="filterMenu('Pastries')">Pastries</button>
+        </div>
+      </div>
+      <div class="menu-grid" id="menuGrid">
+        <p style="grid-column: 1/-1; padding: 50px; font-size: 20px;">Loading menu items...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMOS VIEW -->
+  <div id="view-promos" class="page-view">
+    <div class="menu-view">
+      <h2 class="wheel-title">Exclusive Promos</h2>
+      <div id="promoGrid" class="promo-container-layout">
+        <p style="padding: 50px; font-size: 20px; color: white;">Loading promos...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHEEL VIEW -->
+  <div id="view-wheel" class="page-view">
+    <div class="wheel-view">
+      <h2 class="wheel-title" id="wheelTitle">Spin the Wheel!</h2>
+      <div class="wheel-layout">
+        <div class="wheel-cats-panel">
+          <div id="wheelCatsList"></div>
+        </div>
+        <div class="wheel-visual-panel">
+          <div class="wheel-canvas-wrapper" onclick="spinTheWheel()">
+            <div class="wheel-marker"></div>
+            <div id="tapHint" class="tap-hint">Tap to Spin!</div>
+            <canvas id="wheelCanvas" width="1000" height="1000"></canvas>
+          </div>
+          <div class="result-badge" id="winnerBox">
+            <span style="font-size: 35px;">✨</span>
+            <span id="winnerText">Ready to Spin!</span>
+            <span style="font-size: 35px;">✨</span>
+          </div>
+        </div>
+      </div>
+      <div class="auth-banner">
+        <div class="banner-left">
+          <div class="icon-key">🔑</div>
+          <div>
+            <h3 style="margin: 0; font-size: 28px; color: white;">Want to Save Your Orders?</h3>
+            <p style="margin: 8px 0 0; opacity: 0.95; font-size: 18px; color: white;">Log in or create an account to track orders, earn loyalty points, and access exclusive deals!</p>
+          </div>
+        </div>
+        <button class="btn-auth-redirect" onclick="openAuthModal()">Login/Register</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT VIEW - REDESIGNED 3-CARD LAYOUT -->
+  <div id="view-about" class="page-view">
+    <div class="about-view">
+      <!-- Top Card -->
+      <div class="card-base about-top-card">
+        <div style="flex: 1.2;">
+          <div class="about-title-box">About Cafeteria</div>
+          <div class="about-desc-box">
+            Tori cafeteria – where every sip brings satisfaction, serving the heart of Tubao, La Union with passion and quality.
+          </div>
+        </div>
+        <div class="about-logo-right">
+          <img src="images/tori.jpg" alt="Tori Logo">
+        </div>
+      </div>
+
+      <!-- Bottom Grid -->
+      <div class="about-bottom-grid">
+        <!-- Map Card -->
+        <div class="card-base find-us-card">
+          <a href="https://www.google.com/maps/search/?api=1&query=Tori+Cafeteria+Tubao" target="_blank">
+            <img src="images/MAPToriCafe.png" alt="Map">
+          </a>
+          <div style="font-weight: 800; font-size: 18px; margin-bottom: 10px;">📍 Find Us</div>
+          <p style="font-size: 16px; line-height: 1.6;">Located in Poblacion, Tubao, La Union, our cozy cafeteria serves premium coffee and fresh pastries. Open daily for your morning pick-up and afternoon treat!</p>
+        </div>
+
+        <!-- Contact Card -->
+        <div class="card-base">
+          <div class="contact-card-header">
+            <div class="contact-badge"><span>?</span> Contact</div>
+            <div class="get-in-touch-title">Get in Touch</div>
+          </div>
+          <div class="contact-item-box">
+            <i class="fab fa-facebook"></i>
+            <a href="https://www.facebook.com/SassyShadeInspiredByAbiehsChoice" target="_blank" style="text-decoration: none; color: inherit;">SassyShadeInspiredByAbiehs Choice</a>
+          </div>
+          <div class="contact-item-box">
+            <i class="fas fa-envelope"></i>
+            <a href="mailto:toricafeteriatc@gmail.com" style="text-decoration: none; color: inherit;">toricafeteriatc@gmail.com</a>
+          </div>
+          <div class="contact-item-box">
+            <i class="fas fa-phone"></i>
+            <a href="tel:+639565908643" style="text-decoration: none; color: inherit;">(+63) 956 590 8643</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTH MODAL FOR HERO PAGE -->
+  <div id="heroAuthModal" class="auth-modal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center;">
+    <div class="auth-modal-content" style="background: white; padding: 40px; border-radius: 20px; max-width: 450px; width: 90%; position: relative; color: #333;">
+      <button onclick="closeHeroAuthModal()" style="position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 24px; cursor: pointer; color: #333;">&times;</button>
+      <h3 id="authModalTitle" style="text-align: center; font-family: 'Roboto Slab', serif; margin-bottom: 25px; font-size: 24px; color: #000;">Sign up</h3>
+      <div id="heroAuthMessage" style="margin-bottom: 15px; text-align: center; font-weight: 600; font-size: 14px; color: #333;"></div>
+      
+      <div id="heroAuthInputs">
+        <input type="email" id="heroEmail" placeholder="Email" style="width: 100%; padding: 12px 15px; margin-bottom: 12px; border: 1.5px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; background: #f9f9f9; color: #333;">
+        <input type="text" id="heroPhone" placeholder="Phone Number (optional)" style="width: 100%; padding: 12px 15px; margin-bottom: 12px; border: 1.5px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; background: #f9f9f9; color: #333;">
+        <div id="regOnlyFields" style="display: none;">
+          <input type="text" id="heroName" placeholder="Full Name" style="width: 100%; padding: 12px 15px; margin-bottom: 12px; border: 1.5px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; background: #f9f9f9; color: #333;">
+        </div>
+        <input type="password" id="heroPassword" placeholder="Password" style="width: 100%; padding: 12px 15px; margin-bottom: 20px; border: 1.5px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; background: #f9f9f9; color: #333;">
+        
+        <div id="loginActions">
+          <button onclick="handleHeroAuth('login')" style="width: 100%; padding: 14px; background: var(--coffee-dark); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer; margin-bottom: 15px; transition: 0.3s;">Login</button>
+          <p style="text-align: center; font-size: 14px; color: #333;">Don't have an account? <a href="javascript:void(0)" onclick="toggleHeroAuthMode('register')" style="color: var(--accent-brown); font-weight: 700; text-decoration: none;">Register</a></p>
+        </div>
+        
+        <div id="registerActions" style="display: none;">
+          <button onclick="handleHeroAuth('register')" style="width: 100%; padding: 14px; background: var(--accent-tan); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer; margin-bottom: 15px; transition: 0.3s;">Register</button>
+          <p style="text-align: center; font-size: 14px; color: #333;">Already have an account? <a href="javascript:void(0)" onclick="toggleHeroAuthMode('login')" style="color: var(--accent-brown); font-weight: 700; text-decoration: none;">Login</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer style="background: var(--coffee-dark); padding: 60px 5%; text-align: center; color: rgba(255,255,255,0.3); font-weight: 500;">
+    <div style="margin-bottom: 25px;">
+      <img src="images/tori.jpg" alt="Logo" style="height: 60px; background: white; padding: 5px; border-radius: 50%; opacity: 0.8;">
+    </div>
+    <p>&copy; 2024 TORI CAFETERIA. ALL RIGHTS RESERVED.</p>
+  </footer>
+
+  <script>
+    let allProducts = [];
+    let allPromos = [];
+    let categories = { 1: "Coffee", 2: "Non-coffee", 3: "Frappe", 4: "Soda", 5: "Pastries" };
+    let currentCat = 'All';
+    let searchVal = '';
+
+    function navigateTo(view) {
+      document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + view).classList.add('active');
+      document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+      document.getElementById('nav-' + view).classList.add('active');
+      if (view === 'menu') renderMenu();
+      if (view === 'promos') renderPromos();
+      if (view === 'wheel') {
+        initWheel();
+        // Show tap hint when navigating to wheel
+        const hint = document.getElementById('tapHint');
+        if (hint) {
+          hint.style.display = 'block';
+          setTimeout(() => { hint.style.opacity = '1'; }, 10);
+        }
+      }
+      
+      // Close mobile menu if open
+      const navLinks = document.getElementById('navLinks');
+      const menuBtn = document.querySelector('.mobile-menu-btn i');
+      if (navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+        if (menuBtn) {
+          menuBtn.classList.remove('fa-times');
+          menuBtn.classList.add('fa-bars');
+        }
+      }
+      
+      window.scrollTo(0, 0);
+    }
+
+    function toggleMobileMenu() {
+      const navLinks = document.getElementById('navLinks');
+      const menuBtn = document.querySelector('.mobile-menu-btn i');
+      navLinks.classList.toggle('active');
+      
+      if (navLinks.classList.contains('active')) {
+        menuBtn.classList.remove('fa-bars');
+        menuBtn.classList.add('fa-times');
+      } else {
+        menuBtn.classList.remove('fa-times');
+        menuBtn.classList.add('fa-bars');
+      }
+    }
+
+    async function loadData() {
+      if (!window.getDB) return;
+      const db = getDB();
+      if (!db) {
+        setTimeout(loadData, 500);
+        return;
+      }
+      
+      // Load products
+      const { data, error } = await db.from('products').select('*').eq('archived', false);
+      if (!error) {
+        allProducts = data;
+        if (document.getElementById('view-menu').classList.contains('active')) renderMenu();
+      }
+
+      // Load promos initial cache
+      const { data: promoData, error: promoError } = await db.from('promos').select('*').order('created_at', { ascending: false });
+      if (!promoError) {
+        allPromos = promoData;
+        if (document.getElementById('view-promos').classList.contains('active')) renderPromos();
+      }
+      
+      subscribeToPromos();
+      subscribeToProducts();
+    }
+
+    let productsUnsub = null;
+    function subscribeToProducts() {
+      const db = getDB();
+      if (!db) return;
+      if (productsUnsub) productsUnsub.unsubscribe();
+      
+      productsUnsub = db.channel('hero-products-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async () => {
+          const { data, error } = await db.from('products').select('*').eq('archived', false);
+          if (!error) {
+            allProducts = data;
+            if (document.getElementById('view-menu').classList.contains('active')) renderMenu();
+          }
+        })
+        .subscribe();
+    }
+
+    function handleSearch() {
+      searchVal = document.getElementById('menuSearch').value.toLowerCase();
+      renderMenu();
+    }
+
+    function filterMenu(cat) {
+      currentCat = cat;
+      document.querySelectorAll('.cat-pill').forEach(t => {
+        t.classList.remove('active');
+        if (t.textContent === cat) t.classList.add('active');
+      });
+      renderMenu();
+    }
+
+    function renderMenu() {
+      const grid = document.getElementById('menuGrid');
+      grid.innerHTML = '';
+      
+      // Filter products based on category and search
+      let filtered = allProducts.filter(p => {
+        const mCat = currentCat === 'All' || categories[p.category_id] === currentCat;
+        const mSearch = p.name.toLowerCase().includes(searchVal);
+        return mCat && mSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<p style="grid-column: 1/-1; padding: 50px; font-size: 20px;">No items found matching your search.</p>';
+        return;
+      }
+
+      // If "All" tab is selected, sort by specific order: Coffee, Non-coffee, Frappe, Soda, Pastries
+      if (currentCat === 'All') {
+        const order = ['Coffee', 'Non-coffee', 'Frappe', 'Soda', 'Pastries'];
+        filtered.sort((a, b) => {
+          const catA = categories[a.category_id] || '';
+          const catB = categories[b.category_id] || '';
+          const indexA = order.indexOf(catA);
+          const indexB = order.indexOf(catB);
+          
+          // If category not in list, put it at the end
+          const finalIndexA = indexA === -1 ? 99 : indexA;
+          const finalIndexB = indexB === -1 ? 99 : indexB;
+          
+          if (finalIndexA !== finalIndexB) return finalIndexA - finalIndexB;
+          return a.name.localeCompare(b.name); // Secondary sort by name
+        });
+      }
+
+      const grouped = {};
+      filtered.forEach(p => { if(!grouped[p.name]) grouped[p.name] = []; grouped[p.name].push(p); });
+      
+      // Convert grouped object to array to maintain the sorted order
+      const groupedArray = [];
+      const seenNames = new Set();
+      filtered.forEach(p => {
+        if (!seenNames.has(p.name)) {
+          groupedArray.push([p.name, grouped[p.name]]);
+          seenNames.add(p.name);
+        }
+      });
+
+      groupedArray.forEach(([name, sizes]) => {
+        const card = document.createElement('div');
+        card.className = 'menu-card';
+        const imgUrl = sizes[0].image_url || 'images/tori.jpg';
+        
+        card.innerHTML = `
+          <div class="menu-card-img-wrapper" onclick="openItemModal('${name.replace(/'/g, "\\'")}', ${JSON.stringify(sizes).replace(/"/g, '&quot;')})">
+            <img src="${imgUrl}" alt="${name}" onerror="this.src='images/tori.jpg'">
+            <div class="menu-card-overlay">
+              <span class="view-details">View Details</span>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    let currentModalItem = null;
+    let selectedModalSize = null;
+    let selectedModalTemp = 'Hot';
+
+    function openItemModal(name, sizes) {
+      currentModalItem = { name, sizes };
+      selectedModalSize = sizes[0];
+      selectedModalTemp = 'Hot';
+      
+      document.getElementById('modalTitle').textContent = name;
+      // Use the description from the first size variant
+      const productDesc = sizes[0].description || sizes[0].product_description || "";
+      document.getElementById('modalDesc').textContent = productDesc;
+      document.getElementById('modalImg').style.backgroundImage = `url('${sizes[0].image_url || 'images/tori.jpg'}')`;
+      
+      // Temperature section - only for Coffee
+      const isCoffee = categories[sizes[0].category_id] === 'Coffee';
+      document.getElementById('modalTempSection').style.display = isCoffee ? 'block' : 'none';
+      
+      // Sizes grid
+      const sizeGrid = document.getElementById('modalSizeGrid');
+      sizeGrid.innerHTML = '';
+      sizes.forEach((s, idx) => {
+        const btn = document.createElement('div');
+        btn.className = 'modal-size-btn' + (idx === 0 ? ' active' : '');
+        btn.innerHTML = `
+          <span class="size-name">${s.size}</span>
+          <span class="size-price">₱${s.product_price}</span>
+        `;
+        btn.onclick = () => {
+          document.querySelectorAll('.modal-size-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedModalSize = s;
+        };
+        sizeGrid.appendChild(btn);
+      });
+      
+      document.getElementById('itemModal').style.display = 'flex';
+      document.body.style.overflow = 'hidden'; // Prevent scroll
+    }
+
+    function closeItemModal() {
+      document.getElementById('itemModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+
+    function setModalTemp(temp) {
+      selectedModalTemp = temp;
+      document.querySelectorAll('.modal-temp-btn').forEach(b => b.classList.remove('active'));
+      if (temp === 'Cold') document.getElementById('tempCold').classList.add('active');
+      else document.getElementById('tempHot').classList.add('active');
+    }
+
+    function handleModalOrder() {
+      closeItemModal();
+      openAuthModal();
+    }
+
+    let promosUnsub = null;
+    let promosReloadTimer = null;
+
+    function subscribeToPromos() {
+      const db = getDB();
+      if (!db) {
+        setTimeout(subscribeToPromos, 500);
+        return;
+      }
+
+      if (promosUnsub) promosUnsub.unsubscribe();
+
+      promosUnsub = db.channel('hero-promos-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'promos' }, () => {
+          if (promosReloadTimer) clearTimeout(promosReloadTimer);
+          promosReloadTimer = setTimeout(() => {
+            if (document.getElementById('view-promos').classList.contains('active')) {
+              renderPromos();
+            }
+          }, 300);
+        })
+        .subscribe();
+    }
+
+    async function renderPromos() {
+      const grid = document.getElementById('promoGrid');
+      
+      const db = getDB();
+      if (!db) {
+        setTimeout(renderPromos, 500);
+        return;
+      }
+      
+      const { data, error } = await db.from('promos').select('*').order('created_at', { ascending: false });
+      
+      if (error) {
+        grid.innerHTML = `<p style="padding: 50px; font-size: 20px; color: white;">Error loading promos: ${error.message}</p>`;
+        return;
+      }
+      
+      if (!data || data.length === 0) {
+        grid.innerHTML = '<p style="padding: 50px; font-size: 20px; color: white;">No active promos at the moment. Stay tuned!</p>';
+        return;
+      }
+
+      // Filter out expired promos (hide on the due date)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const activePromos = data.filter((p) => {
+        if (!p.valid_until && !p.expires_at) return true; // No expiry date = always active
+        const expiryDate = new Date(p.expires_at || p.valid_until);
+        if (Number.isNaN(expiryDate.getTime())) return true;
+        expiryDate.setHours(0, 0, 0, 0);
+        return expiryDate >= today; // Keep promo visible through its valid_until date
+      });
+
+      if (activePromos.length === 0) {
+        grid.innerHTML = '<p style="padding: 50px; font-size: 20px; color: white;">No active promos at the moment. Stay tuned!</p>';
+        return;
+      }
+      
+      // Prepare fragment
+      const fragment = document.createDocumentFragment();
+      activePromos.forEach(promo => {
+        const card = document.createElement('div');
+        card.className = 'promo-card-new';
+        
+        const dateStr = (promo.expires_at || promo.valid_until) ? new Date(promo.expires_at || promo.valid_until).toLocaleDateString() : 'Limited Time';
+        const codeDisplay = promo.code && promo.code.trim() !== "" ? `Code: ${promo.code}` : "Exclusive Offer";
+        const description = promo.description || promo.content || '';
+        
+        card.innerHTML = `
+          ${promo.image_url ? `<img src="${promo.image_url}" class="promo-image-new" alt="${promo.title}" loading="lazy" onerror="this.style.display='none'">` : ''}
+          <div class="promo-info-new">
+            <h3 class="promo-title-new">${promo.title}</h3>
+            <div class="promo-details-new">${description.replace(/\n/g, "<br>")}</div>
+          </div>
+          <div class="promo-footer-new">
+            <span>${codeDisplay}</span>
+            <span>Valid until: ${dateStr}</span>
+          </div>
+        `;
+        fragment.appendChild(card);
+      });
+
+      // Update DOM in one go using replaceChildren for stability
+      grid.replaceChildren(fragment);
+    }
+
+    function toggleTemp(el) {
+      const container = el.parentElement;
+      container.querySelectorAll('.temp-option').forEach(opt => opt.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function selectSize(el, price) {
+      const container = el.parentElement;
+      container.querySelectorAll('.size-price-btn-hero').forEach(btn => btn.classList.remove('active'));
+      el.classList.add('active');
+      
+      // Update price display in the footer of this card
+      const cardInfo = container.closest('.menu-card-info');
+      const priceDisplay = cardInfo.querySelector('.current-price-display');
+      priceDisplay.textContent = `₱${price}`;
+    }
+
+    // Zoom Image Feature
+    function zoomImage(src, name) {
+      const modal = document.createElement('div');
+      modal.className = 'zoom-modal';
+      modal.style = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); z-index: 3000;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        cursor: zoom-out; animation: fadeIn 0.3s ease;
+      `;
+      modal.onclick = () => modal.remove();
+      
+      const img = document.createElement('img');
+      img.src = src;
+      img.style = 'max-width: 90%; max-height: 80%; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.5); object-fit: contain;';
+      
+      const title = document.createElement('h3');
+      title.textContent = name;
+      title.style = 'color: white; margin-top: 20px; font-family: "Roboto Slab", serif; font-size: 24px;';
+      
+      const close = document.createElement('div');
+      close.innerHTML = '&times;';
+      close.style = 'position: absolute; top: 20px; right: 30px; color: white; font-size: 50px; font-weight: 300;';
+      
+      modal.appendChild(img);
+      modal.appendChild(title);
+      modal.appendChild(close);
+      document.body.appendChild(modal);
+    }
+
+    let wheelCtx, rotation = 0, isSpinning = false, wheelItems = [];
+    let offscreenWheel = document.createElement('canvas');
+    let offscreenCtx = offscreenWheel.getContext('2d');
+    offscreenWheel.width = 1000;
+    offscreenWheel.height = 1000;
+
+    function initWheel() {
+      const canvas = document.getElementById('wheelCanvas');
+      if (!canvas) return;
+      wheelCtx = canvas.getContext('2d');
+      const cats = document.getElementById('wheelCatsList');
+      if (cats.children.length === 0) {
+        Object.values(categories).forEach(cat => {
+          const div = document.createElement('div');
+          div.className = 'wheel-cat-option';
+          div.innerHTML = `<span>${cat}</span> <input type="checkbox" value="${cat}" checked onchange="updateWheel()">`;
+          div.onclick = (e) => { if(e.target.tagName !== 'INPUT') { const cb = div.querySelector('input'); cb.checked = !cb.checked; updateWheel(); } };
+          cats.appendChild(div);
+        });
+      }
+      updateWheel();
+    }
+
+    function updateWheel() {
+      const checked = Array.from(document.querySelectorAll('#wheelCatsList input:checked')).map(i => i.value);
+      wheelItems = allProducts.filter(p => checked.includes(categories[p.category_id]));
+      preRenderWheel();
+      drawWheel();
+    }
+
+    function preRenderWheel() {
+      if (!offscreenCtx) return;
+      const s = 1000, c = 500, r = 475;
+      offscreenCtx.clearRect(0, 0, s, s);
+      
+      if (wheelItems.length === 0) {
+        offscreenCtx.fillStyle = "#444";
+        offscreenCtx.beginPath();
+        offscreenCtx.arc(c, c, r, 0, Math.PI * 2);
+        offscreenCtx.fill();
+        offscreenCtx.fillStyle = "white";
+        offscreenCtx.font = "bold 40px Inter";
+        offscreenCtx.textAlign = "center";
+        offscreenCtx.fillText("SELECT CATEGORIES", c, c);
+        return;
+      }
+
+      const slice = (Math.PI * 2) / wheelItems.length;
+      wheelItems.forEach((it, i) => {
+        const a = i * slice;
+        offscreenCtx.fillStyle = i % 2 ? "#74512D" : "#AF8F6F";
+        offscreenCtx.beginPath();
+        offscreenCtx.moveTo(c, c);
+        offscreenCtx.arc(c, c, r, a, a + slice);
+        offscreenCtx.fill();
+        
+        offscreenCtx.save();
+        offscreenCtx.translate(c, c);
+        offscreenCtx.rotate(a + slice / 2);
+        offscreenCtx.fillStyle = "white";
+        offscreenCtx.font = "bold 26px Inter";
+        offscreenCtx.textAlign = "right";
+        let n = it.name.length > 28 ? it.name.substr(0, 25) + '...' : it.name;
+        offscreenCtx.fillText(n, r - 50, 8);
+        offscreenCtx.restore();
+      });
+    }
+
+    function drawWheel() {
+      if (!wheelCtx) return;
+      const s = 1000, c = 500, r = 475;
+      
+      // 1. Clear main canvas
+      wheelCtx.clearRect(0, 0, s, s);
+      
+      // 2. Draw static background (rim and outer shadow)
+      wheelCtx.beginPath();
+      wheelCtx.arc(c, c, r + 25, 0, Math.PI * 2);
+      wheelCtx.fillStyle = "#111";
+      wheelCtx.fill();
+      
+      // 3. Draw the rotated pre-rendered wheel
+      wheelCtx.save();
+      wheelCtx.translate(c, c);
+      wheelCtx.rotate(rotation);
+      wheelCtx.translate(-c, -c);
+      wheelCtx.drawImage(offscreenWheel, 0, 0);
+      wheelCtx.restore();
+      
+      // 4. Draw static foreground (dots on rim and center pin)
+      for(let i=0; i<16; i++) {
+        const a = (i * Math.PI * 2) / 16;
+        wheelCtx.beginPath();
+        wheelCtx.arc(c + (r+25)*Math.cos(a), c + (r+25)*Math.sin(a), 12, 0, Math.PI * 2);
+        wheelCtx.fillStyle = "#FFD700";
+        wheelCtx.fill();
+      }
+      
+      wheelCtx.beginPath();
+      wheelCtx.arc(c, c, 70, 0, Math.PI * 2);
+      wheelCtx.fillStyle = "#FFD700";
+      wheelCtx.fill();
+      wheelCtx.strokeStyle = "#111";
+      wheelCtx.lineWidth = 6;
+      wheelCtx.stroke();
+    }
+
+    function spinTheWheel() {
+      if (isSpinning || wheelItems.length === 0) return;
+      isSpinning = true;
+      const hint = document.getElementById('tapHint');
+      if (hint) {
+        hint.style.opacity = '0';
+        setTimeout(() => { hint.style.display = 'none'; }, 400);
+      }
+      const wheelTitle = document.getElementById('wheelTitle');
+      if (wheelTitle) wheelTitle.style.display = 'none';
+      document.getElementById('winnerBox').classList.remove('visible');
+      const spinAngle = 4000 + Math.random() * 3000;
+      const duration = 5000, start = performance.now(), startRot = rotation;
+      function anim(now) {
+        let p = (now - start) / duration;
+        if (p > 1) p = 1;
+        const ease = 1 - Math.pow(1 - p, 4);
+        rotation = startRot + (spinAngle * ease * Math.PI) / 180;
+        drawWheel();
+        if (p < 1) requestAnimationFrame(anim);
+        else {
+          isSpinning = false;
+          if (wheelTitle) wheelTitle.style.display = 'block';
+          const slice = (Math.PI * 2) / wheelItems.length;
+          const adj = (rotation + Math.PI / 2) % (Math.PI * 2);
+          const idx = Math.floor((Math.PI * 2 - adj) / slice) % wheelItems.length;
+          document.getElementById('winnerText').textContent = wheelItems[idx].name;
+          document.getElementById('winnerBox').classList.add('visible');
+        }
+      }
+      requestAnimationFrame(anim);
+    }
+
+    function openAuthModal(mode) { 
+      const modal = document.getElementById('heroAuthModal');
+      if (modal) {
+        // Clear fields when opening modal
+        document.getElementById('heroEmail').value = '';
+        document.getElementById('heroPhone').value = '';
+        document.getElementById('heroPassword').value = '';
+        if (document.getElementById('heroName')) document.getElementById('heroName').value = '';
+        document.getElementById('heroAuthMessage').innerHTML = '';
+
+        modal.style.display = 'flex';
+        if (mode === 'signup') {
+          toggleHeroAuthMode('register');
+        } else {
+          toggleHeroAuthMode('login');
+        }
+      }
+    }
+
+    function closeHeroAuthModal() {
+      const modal = document.getElementById('heroAuthModal');
+      if (modal) {
+        // Clear fields when closing modal
+        document.getElementById('heroEmail').value = '';
+        document.getElementById('heroPhone').value = '';
+        document.getElementById('heroPassword').value = '';
+        if (document.getElementById('heroName')) document.getElementById('heroName').value = '';
+        document.getElementById('heroAuthMessage').innerHTML = '';
+        modal.style.display = 'none';
+      }
+    }
+
+    function toggleHeroAuthMode(mode) {
+      const isReg = mode === 'register';
+      document.getElementById('regOnlyFields').style.display = isReg ? 'block' : 'none';
+      document.getElementById('loginActions').style.display = isReg ? 'none' : 'block';
+      document.getElementById('registerActions').style.display = isReg ? 'block' : 'none';
+      document.getElementById('authModalTitle').textContent = isReg ? 'Sign up' : 'Login';
+    }
+
+    async function handleHeroAuth(mode) {
+      const db = window.getDB ? window.getDB() : null;
+      if (!db) {
+        alert("Database connection not ready");
+        return;
+      }
+
+      const email = document.getElementById('heroEmail').value.trim();
+      const phone = document.getElementById('heroPhone').value.trim();
+      const password = document.getElementById('heroPassword').value.trim();
+      const messageEl = document.getElementById('heroAuthMessage');
+      
+      if (!email && !phone) {
+        messageEl.innerHTML = '<span style="color: red;">Email or phone required</span>';
+        return;
+      }
+      if (!password) {
+        messageEl.innerHTML = '<span style="color: red;">Password required</span>';
+        return;
+      }
+
+      if (mode === 'login') {
+        try {
+          let query = db.from('customers').select('*');
+          if (email && phone) {
+            query = query.or(`email.eq.${email},phone.eq.${phone},contact.eq.${email},contact.eq.${phone}`);
+          } else if (email) {
+            query = query.or(`email.eq.${email},contact.eq.${email}`);
+          } else {
+            query = query.or(`phone.eq.${phone},contact.eq.${phone}`);
+          }
+
+          const { data, error } = await query;
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            const user = data[0];
+            if (user.password && user.password !== password) {
+              messageEl.innerHTML = '<span style="color: red;">Incorrect password</span>';
+            } else {
+              messageEl.innerHTML = '<span style="color: green;">Login successful! Redirecting...</span>';
+              
+              // Store user in localStorage for automatic login
+              localStorage.setItem("customer_auth", JSON.stringify(user));
+              
+              setTimeout(() => {
+                window.location.href = `customer/customer.html`;
+              }, 1500);
+            }
+          } else {
+            messageEl.innerHTML = '<span style="color: red;">User not found</span>';
+          }
+        } catch (err) {
+          console.error(err);
+          messageEl.innerHTML = `<span style="color: red;">Error: ${err.message}</span>`;
+        }
+      } else {
+        const name = document.getElementById('heroName').value.trim();
+        if (!name) {
+          messageEl.innerHTML = '<span style="color: red;">Full name required</span>';
+          return;
+        }
+
+        try {
+          const contact = email || phone;
+          const { error } = await db.from('customers').upsert({
+            name: name,
+            email: email || null,
+            phone: phone || null,
+            password: password,
+            contact: contact,
+            created_at: new Date().toISOString(),
+            loyalty_points: 0
+          });
+
+          if (error) throw error;
+          
+          const newUser = {
+            name: name,
+            email: email || null,
+            phone: phone || null,
+            password: password,
+            contact: contact,
+            loyalty_points: 0
+          };
+
+          // Store in localStorage for automatic login
+          localStorage.setItem("customer_auth", JSON.stringify(newUser));
+          
+          messageEl.innerHTML = '<span style="color: green;">Registration successful! Redirecting...</span>';
+          
+          setTimeout(() => {
+            window.location.href = `customer/customer.html`;
+          }, 1500);
+        } catch (err) {
+          console.error(err);
+          messageEl.innerHTML = `<span style="color: red;">Error: ${err.message}</span>`;
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>
