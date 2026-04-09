@@ -145,7 +145,7 @@ window.customerLogout = () => {
   localStorage.removeItem("customer_auth")
   localStorage.removeItem("customer_cart")
   localStorage.removeItem("customer_preorder_cart")
-  location.href = "../herocustomer.html"
+  location.href = "../index.html"
 }
 
 // --- Order Confirmed Modal ---
