@@ -226,10 +226,19 @@ body {
     align-items: center;
     gap: 20px;
   }
+
+  .search-bar-container {
+    flex: 0 0 auto;
+    max-width: 100%;
+    align-self: stretch;
+  }
 }
 
+/* flex-basis is the main-axis size: in a column stack it becomes height — avoid huge mobile gap */
 .search-bar-container {
-  flex: 0 1 400px;
+  flex: 0 1 auto;
+  max-width: 400px;
+  width: 100%;
   position: relative;
 }
 
@@ -2517,6 +2526,11 @@ h1 {
   letter-spacing: 0.5px;
 }
 
+/* First category sits directly under search — avoid stacked top margins */
+#menuList > .category-header:first-child {
+  margin-top: 0;
+}
+
 .category-header span {
   font-size: 1.8rem;
 }
@@ -2526,12 +2540,20 @@ h1 {
     font-size: 1.2rem;
     margin: 35px 0 20px 0;
   }
+
+  #menuList > .category-header:first-child {
+    margin-top: 0;
+  }
 }
 
 @media (max-width: 768px) {
   .category-header {
     font-size: 1.1rem;
     margin: 25px 0 15px 0;
+  }
+
+  #menuList > .category-header:first-child {
+    margin-top: 0;
   }
 }
 
@@ -4615,6 +4637,7 @@ h1 {
   }
 
   .search-bar-container {
+    flex: 0 0 auto !important;
     max-width: 100% !important;
   }
 
