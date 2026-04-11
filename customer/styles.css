@@ -1989,8 +1989,10 @@ h3 {
 
 #preorderSetupModal .input-field,
 #visitSetupModal .input-field {
+  width: 100%;
   max-width: 100%;
   min-width: 0;
+  display: block;
 }
 
 .visit-time-fields {
@@ -4889,26 +4891,47 @@ h1 {
     text-overflow: ellipsis;
   }
 
-  /* Modal responsive adjustments */
+  /*
+   * Modal responsive adjustments
+   * Use width: 100% of the padded overlay — NOT vw — or the panel becomes wider
+   * than the flex container (90vw ignores parent padding) and inputs overflow.
+   */
   .auth-modal-content {
-    width: 90vw !important;
-    max-width: 95% !important;
+    width: 100% !important;
+    max-width: min(420px, calc(100vw - 32px)) !important;
     padding: 12px 15px !important;
     margin: 0 !important;
+    min-width: 0 !important;
     max-height: 90vh !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    align-items: stretch !important;
+    box-sizing: border-box !important;
   }
 
   /* Pre-order Setup / Book a Visit: fit panel + stack time row on narrow screens */
   #preorderSetupModal .booking-setup-modal-content,
   #visitSetupModal .booking-setup-modal-content {
-    width: min(100%, calc(100vw - 24px)) !important;
-    max-width: min(480px, calc(100vw - 24px)) !important;
+    width: 100% !important;
+    max-width: min(480px, calc(100vw - 32px)) !important;
     padding: 16px 18px calc(18px + env(safe-area-inset-bottom)) !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
+    min-width: 0 !important;
+  }
+
+  /* iOS/WebKit: date/time controls have a large intrinsic min-width — force shrink */
+  #preorderSetupModal input[type="date"],
+  #preorderSetupModal input[type="time"],
+  #visitSetupModal input[type="date"],
+  #visitSetupModal input[type="time"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    display: block;
   }
 
   .visit-time-fields {
@@ -5015,8 +5038,17 @@ h1 {
 
   .auth-modal-content {
     width: 100% !important;
+    max-width: min(420px, calc(100vw - 24px)) !important;
     padding: 14px 12px !important;
     border-radius: 12px !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  #preorderSetupModal .booking-setup-modal-content,
+  #visitSetupModal .booking-setup-modal-content {
+    max-width: min(480px, calc(100vw - 24px)) !important;
   }
 
   .auth-modal-content h3 {
