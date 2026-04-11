@@ -1965,26 +1965,33 @@ h3 {
   box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
   width: 95%;
   max-width: 420px;
+  min-width: 0; /* flex child: allow shrink below intrinsic date/time input width */
   position: relative;
   animation: modalSlideUp 0.3s ease-out;
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* Pre-order Setup + Book a Visit: keep date/time inputs inside the card on mobile */
+/*
+ * Pre-order Setup + Book a Visit
+ * max-width must use % of the padded overlay — not 100vw — or iOS Safari lets
+ * the panel grow wider than the flex container and date/time inputs overflow.
+ */
 .booking-setup-modal-content {
   box-sizing: border-box;
-  max-width: 480px;
+  width: 100%;
+  max-width: min(480px, 100%);
   padding: 40px;
   border-radius: 24px;
   min-width: 0;
-  width: min(95%, calc(100vw - 32px));
   overflow-x: hidden;
 }
 
 #preorderSetupModal .input-group,
 #visitSetupModal .input-group {
   min-width: 0;
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
 }
 
 #preorderSetupModal .input-field,
@@ -1993,6 +2000,22 @@ h3 {
   max-width: 100%;
   min-width: 0;
   display: block;
+}
+
+/* Safari/iOS: native date/time widgets ignore width until appearance is normalized */
+#preorderSetupModal input[type="date"],
+#preorderSetupModal input[type="time"],
+#visitSetupModal input[type="date"],
+#visitSetupModal input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+#preorderSetupModal .modal-buttons .btn-secondary,
+#visitSetupModal .modal-buttons .btn-secondary {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
 }
 
 .visit-time-fields {
@@ -4898,7 +4921,7 @@ h1 {
    */
   .auth-modal-content {
     width: 100% !important;
-    max-width: min(420px, calc(100vw - 32px)) !important;
+    max-width: min(420px, 100%) !important;
     padding: 12px 15px !important;
     margin: 0 !important;
     min-width: 0 !important;
@@ -4915,7 +4938,7 @@ h1 {
   #preorderSetupModal .booking-setup-modal-content,
   #visitSetupModal .booking-setup-modal-content {
     width: 100% !important;
-    max-width: min(480px, calc(100vw - 32px)) !important;
+    max-width: min(480px, 100%) !important;
     padding: 16px 18px calc(18px + env(safe-area-inset-bottom)) !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
@@ -4932,6 +4955,8 @@ h1 {
     min-width: 0 !important;
     box-sizing: border-box !important;
     display: block;
+    -webkit-appearance: none !important;
+    appearance: none !important;
   }
 
   .visit-time-fields {
@@ -5038,7 +5063,7 @@ h1 {
 
   .auth-modal-content {
     width: 100% !important;
-    max-width: min(420px, calc(100vw - 24px)) !important;
+    max-width: min(420px, 100%) !important;
     padding: 14px 12px !important;
     border-radius: 12px !important;
     min-width: 0 !important;
@@ -5048,7 +5073,7 @@ h1 {
 
   #preorderSetupModal .booking-setup-modal-content,
   #visitSetupModal .booking-setup-modal-content {
-    max-width: min(480px, calc(100vw - 24px)) !important;
+    max-width: min(480px, 100%) !important;
   }
 
   .auth-modal-content h3 {
