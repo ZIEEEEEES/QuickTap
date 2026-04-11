@@ -543,7 +543,7 @@
 
   <!-- Pre-order Setup Modal -->
   <div id="preorderSetupModal" class="auth-modal" style="display:none;" onclick="if(event.target === this) closePreorderSetup()">
-    <div class="auth-modal-content" style="max-width: 480px; padding: 40px; border-radius: 24px;">
+    <div class="auth-modal-content booking-setup-modal-content">
       <button class="modal-close" onclick="closePreorderSetup()" style="top: 20px; right: 20px;">✕</button>
       <h3 style="margin-top:0; font-size: 1.6rem; margin-bottom: 30px;">Pre-order Setup</h3>
       <div id="preorderSetupMsg"></div>
@@ -567,7 +567,7 @@
 
   <!-- Visit Setup Modal -->
   <div id="visitSetupModal" class="auth-modal" style="display:none;" onclick="if(event.target === this) closeVisitSetup()">
-    <div class="auth-modal-content" style="max-width: 480px; padding: 40px; border-radius: 24px;">
+    <div class="auth-modal-content booking-setup-modal-content">
       <button class="modal-close" onclick="closeVisitSetup()" style="top: 20px; right: 20px;">✕</button>
       <h3 style="margin-top:0; font-size: 1.6rem; margin-bottom: 30px;">Book a Visit</h3>
       <div id="visitSetupMsg"></div>
@@ -577,12 +577,12 @@
         <input id="visitDate" type="date" class="input-field" style="margin-bottom: 0;">
       </div>
       
-      <div style="display:flex; gap:15px; margin-bottom: 30px;">
-        <div style="flex:1;">
+      <div class="visit-time-fields">
+        <div class="visit-time-field">
           <label style="font-weight:700; display:block; margin-bottom: 8px; font-size: 0.9rem;">Check-in <span style="color: var(--danger);">*</span></label>
           <input id="visitCheckIn" type="time" class="input-field" min="08:00" max="18:00" style="margin-bottom: 0;">
         </div>
-        <div style="flex:1;">
+        <div class="visit-time-field">
           <label style="font-weight:700; display:block; margin-bottom: 8px; font-size: 0.9rem;">Check-out <span style="color: var(--danger);">*</span></label>
           <input id="visitCheckOut" type="time" class="input-field" min="08:00" max="18:00" style="margin-bottom: 0;">
         </div>

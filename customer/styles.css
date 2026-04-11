@@ -840,7 +840,7 @@ body {
   display: none;
   font-family: var(--font-slab);
   font-size: 28px;
-  color: var(--white);
+  color: #000000;
   margin-bottom: 20px;
   text-align: center;
   width: 100%;
@@ -866,7 +866,7 @@ body {
     font-size: 1.5rem !important;
     margin-bottom: 15px !important;
     font-weight: 800 !important;
-    color: var(--white) !important;
+    color: #000000 !important;
     text-align: center !important;
     font-family: var(--font-slab) !important;
   }
@@ -1968,6 +1968,47 @@ h3 {
   position: relative;
   animation: modalSlideUp 0.3s ease-out;
   border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Pre-order Setup + Book a Visit: keep date/time inputs inside the card on mobile */
+.booking-setup-modal-content {
+  box-sizing: border-box;
+  max-width: 480px;
+  padding: 40px;
+  border-radius: 24px;
+  min-width: 0;
+  width: min(95%, calc(100vw - 32px));
+  overflow-x: hidden;
+}
+
+#preorderSetupModal .input-group,
+#visitSetupModal .input-group {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#preorderSetupModal .input-field,
+#visitSetupModal .input-field {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.visit-time-fields {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  margin-bottom: 30px;
+  min-width: 0;
+  width: 100%;
+}
+
+.visit-time-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.visit-time-field .input-field {
+  width: 100%;
 }
 
 .modal-close {
@@ -4858,6 +4899,28 @@ h1 {
     overflow-y: auto !important;
     display: flex !important;
     flex-direction: column !important;
+  }
+
+  /* Pre-order Setup / Book a Visit: fit panel + stack time row on narrow screens */
+  #preorderSetupModal .booking-setup-modal-content,
+  #visitSetupModal .booking-setup-modal-content {
+    width: min(100%, calc(100vw - 24px)) !important;
+    max-width: min(480px, calc(100vw - 24px)) !important;
+    padding: 16px 18px calc(18px + env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .visit-time-fields {
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .visit-time-field {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
   }
 
   /* Limit QR code height on mobile to save space */
