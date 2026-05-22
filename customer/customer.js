@@ -362,8 +362,18 @@ window.openPreorderSetup = () => {
   if (msg) msg.innerHTML = ""
   if (dateEl) {
     const b = getBookingDateBounds("preorder")
-    dateEl.min = b.min
-    dateEl.max = b.max
+    if (!dateEl._flatpickr) {
+      flatpickr(dateEl, {
+        minDate: b.min,
+        maxDate: b.max,
+        dateFormat: "Y-m-d",
+        disableMobile: false,
+        allowInput: true
+      })
+    } else {
+      dateEl._flatpickr.set("minDate", b.min)
+      dateEl._flatpickr.set("maxDate", b.max)
+    }
     dateEl.value = ""
   }
   const timeEl = document.getElementById("preorderPickupTime")
@@ -427,8 +437,18 @@ window.openVisitSetup = () => {
   if (msg) msg.innerHTML = ""
   if (dateEl) {
     const b = getBookingDateBounds("visit")
-    dateEl.min = b.min
-    dateEl.max = b.max
+    if (!dateEl._flatpickr) {
+      flatpickr(dateEl, {
+        minDate: b.min,
+        maxDate: b.max,
+        dateFormat: "Y-m-d",
+        disableMobile: false,
+        allowInput: true
+      })
+    } else {
+      dateEl._flatpickr.set("minDate", b.min)
+      dateEl._flatpickr.set("maxDate", b.max)
+    }
     dateEl.value = ""
   }
   const inEl = document.getElementById("visitCheckIn")

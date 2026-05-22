@@ -8,9 +8,62 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Slab:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="../global-styles.css">
   <link rel="stylesheet" href="./styles.css">
+  <style>
+    .flatpickr-calendar {
+      font-family: 'Inter', sans-serif;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      border: none;
+      background: #F8F4E1;
+    }
+    .flatpickr-month {
+      background: #543310;
+      color: #F8F4E1;
+      border-radius: 16px 16px 0 0;
+      font-family: 'Roboto Slab', serif;
+    }
+    .flatpickr-current-month .flatpickr-monthDropdown-months {
+      background: #543310 !important;
+    }
+    .flatpickr-day {
+      color: #543310;
+      border-radius: 8px;
+    }
+    .flatpickr-day:hover {
+      background: #AF8F6F;
+      color: white;
+    }
+    .flatpickr-day.today {
+      border-color: #74512D;
+    }
+    .flatpickr-day.selected {
+      background: #74512D !important;
+      color: white !important;
+    }
+    .flatpickr-day.disabled,
+    .flatpickr-day.flatpickr-disabled {
+      color: #ccc !important;
+      cursor: not-allowed !important;
+      opacity: 0.5;
+    }
+    .flatpickr-prev-month,
+    .flatpickr-next-month {
+      color: #F8F4E1;
+    }
+    .flatpickr-prev-month:hover,
+    .flatpickr-next-month:hover {
+      color: #AF8F6F;
+    }
+    .flatpickr-weekday {
+      color: #74512D;
+      font-weight: 600;
+    }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="../supabase-init.js"></script>
 
