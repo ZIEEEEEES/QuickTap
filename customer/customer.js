@@ -367,7 +367,7 @@ window.openPreorderSetup = () => {
         minDate: b.min,
         maxDate: b.max,
         dateFormat: "Y-m-d",
-        disableMobile: false,
+        disableMobile: true,
         allowInput: true
       })
     } else {
@@ -442,7 +442,7 @@ window.openVisitSetup = () => {
         minDate: b.min,
         maxDate: b.max,
         dateFormat: "Y-m-d",
-        disableMobile: false,
+        disableMobile: true,
         allowInput: true
       })
     } else {
