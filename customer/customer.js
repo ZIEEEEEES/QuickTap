@@ -20,6 +20,7 @@ let lastNotificationOpened = localStorage.getItem(CUSTOMER_NOTIFICATION_LAST_OPE
 let lastBellCount = 0
 let isInitialBellLoad = true
 let trackPollInterval = null
+let pickupSoundInterval = null
 let wheelIsLoading = false
 
 // Kiosk time check functions
@@ -597,13 +598,34 @@ function playNotificationSound() {
   }
 }
 
+function hasUnreadPickupNotifications() {
+    return customerNotifications.some(n => {
+        const status = String(n.status || "unread").toLowerCase()
+        return status === "unread" && n.type === "pickup"
+    })
+}
+
+function startPickupContinuousSound() {
+    if (pickupSoundInterval) return
+    pickupSoundInterval = setInterval(() => {
+        playNotificationSound()
+    }, 3000)
+}
+
+function stopPickupContinuousSound() {
+    if (pickupSoundInterval) {
+        clearInterval(pickupSoundInterval)
+        pickupSoundInterval = null
+    }
+}
+
 function updateCustomerBell(count) {
   const bell = document.getElementById("customerBell")
   const badge = document.getElementById("customerBellBadge")
   if (!bell || !badge) return
   const total = Number(count || 0)
   
-  // Only play sound if count increased and it's not the initial load
+  // Only play sound once if count increased (not continuous)
   if (!isInitialBellLoad && total > lastBellCount) {
     playNotificationSound()
   }
@@ -612,6 +634,13 @@ function updateCustomerBell(count) {
 
   badge.style.display = total > 0 ? "inline-block" : "none"
   bell.style.display = currentCustomer ? "flex" : "none"
+  
+  // Handle continuous sound for pickup notifications
+  if (hasUnreadPickupNotifications()) {
+    startPickupContinuousSound()
+  } else {
+    stopPickupContinuousSound()
+  }
 }
 
 function appendPaymentLog(existing, entry) {
@@ -833,6 +862,85 @@ async function fetchPickupNotifications() {
   return results
 }
 
+async function fetchCompletedAndRejectedNotifications() {
+  if (!currentCustomer || !db || isGuest) return []
+  const results = []
+  
+  try {
+    let q1 = db.from("pending_orders")
+      .select("*")
+      .neq("type", "redemption")
+      .in("status", ["completed", "rejected", "cancelled"])
+    q1 = buildCustomerIdentityFilter(q1)
+    const { data: pending } = await q1
+    const pendingList = Array.isArray(pending) ? pending : []
+    pendingList.forEach((o) => {
+      const statusLower = String(o.status || "").toLowerCase()
+      if (statusLower === "completed") {
+        results.push({
+          id: `completed-pending-${o.id}`,
+          order_id: o.id,
+          source_table: "pending_orders",
+          remaining_amount: 0,
+          status: "unread",
+          message: "Your order is complete!",
+          type: "completed",
+          created_at: o.updated_at || o.created_at || o.timestamp || new Date().toISOString()
+        })
+      } else if (statusLower === "rejected" || statusLower === "cancelled") {
+        results.push({
+          id: `rejected-pending-${o.id}`,
+          order_id: o.id,
+          source_table: "pending_orders",
+          remaining_amount: 0,
+          status: "unread",
+          message: "Your order has been rejected.",
+          type: "rejected",
+          created_at: o.updated_at || o.created_at || o.timestamp || new Date().toISOString()
+        })
+      }
+    })
+  } catch (_) {}
+
+  try {
+    let q2 = db.from("bookings")
+      .select("*")
+      .in("status", ["completed", "rejected", "cancelled"])
+    q2 = buildCustomerIdentityFilter(q2)
+    const { data: bookings } = await q2
+    const bookingList = Array.isArray(bookings) ? bookings : []
+    bookingList.forEach((o) => {
+      if (o.type !== 'preorder') return
+      const statusLower = String(o.status || "").toLowerCase()
+      if (statusLower === "completed") {
+        results.push({
+          id: `completed-booking-${o.id}`,
+          order_id: o.id,
+          source_table: "bookings",
+          remaining_amount: 0,
+          status: "unread",
+          message: "Your pre-order is complete!",
+          type: "completed",
+          created_at: o.updated_at || o.created_at || o.timestamp || new Date().toISOString()
+        })
+      } else if (statusLower === "rejected" || statusLower === "cancelled") {
+        results.push({
+          id: `rejected-booking-${o.id}`,
+          order_id: o.id,
+          source_table: "bookings",
+          remaining_amount: 0,
+          status: "unread",
+          message: "Your pre-order has been rejected.",
+          type: "rejected",
+          created_at: o.updated_at || o.created_at || o.timestamp || new Date().toISOString()
+        })
+      }
+    })
+  } catch (_) {}
+
+  return results
+}
+
 async function markNotificationSeen(notificationId) {
   if (!notificationId || !db) return
   try {
@@ -885,7 +993,7 @@ function renderCustomerNotifications(list) {
     // Improved detection logic
     const isPaymentConfirmed = status === "paid" || (remaining === 0 && message.includes("fully paid"))
     const isOrderConfirmed = message.includes("now being prepared") || message.includes("order confirmed")
-    const isOrderRejected = message.includes("declined") || message.includes("rejected")
+    const isOrderRejected = n.type === "rejected" || message.includes("declined") || message.includes("rejected")
     
     const item = document.createElement("div")
     item.className = `notification-item ${status}`
@@ -1019,19 +1127,45 @@ async function fetchCustomerNotifications({ autoOpen = false } = {}) {
       })
     }
     
+    const completedRejected = await fetchCompletedAndRejectedNotifications()
+    if (completedRejected.length) {
+      // Replace any existing notification with completed/rejected notification for same order
+      const existingKeysMap = new Map(customerNotifications.map((n) => [`${n.source_table}:${n.order_id}`, n]))
+      completedRejected.forEach((f) => {
+        const key = `${f.source_table}:${f.order_id}`
+        if (existingKeysMap.has(key)) {
+          customerNotifications = customerNotifications.filter(n => `${n.source_table}:${n.order_id}` !== key)
+        }
+        customerNotifications.push(f)
+      })
+    }
+    
     // Sort notifications: latest first
     customerNotifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     
-    // Unread logic: Only count notifications that are truly 'unread'
-    // 'paid' notifications are considered seen once the payment is settled.
-    const unread = customerNotifications.filter((n) => {
+    // Only count these notification types for the bell:
+    // 1. Transaction complete (type === "completed")
+    // 2. Order for pick up (type === "pickup")
+    // 3. Order rejection (type === "rejected")
+    // 4. Insufficient payments (remaining_amount > 0)
+    const countForBell = customerNotifications.filter((n) => {
         const status = String(n.status || "unread").toLowerCase()
-        return status === "unread"
+        if (status !== "unread") return false
+        
+        const type = String(n.type || "")
+        const remaining = Number(n.remaining_amount || 0)
+        
+        return (
+            type === "completed" || 
+            type === "pickup" || 
+            type === "rejected" || 
+            remaining > 0
+        )
     })
     
-    updateCustomerBell(unread.length + customerNoticeCount)
+    updateCustomerBell(countForBell.length + customerNoticeCount)
     renderCustomerNotifications(customerNotifications)
-    if (autoOpen) maybeAutoOpenNotification(unread)
+    if (autoOpen) maybeAutoOpenNotification(countForBell)
   } catch (e) {
     const msg = String(e?.message || e)
     if (/customer_notifications/i.test(msg)) {
@@ -1080,16 +1214,22 @@ window.openCustomerNotifications = async () => {
   const modal = document.getElementById("customerNotificationsModal")
   if (modal) modal.style.display = "flex"
   
+  // Stop the continuous pickup sound
+  stopPickupContinuousSound()
+  
   // NEW: Automatically mark all notifications as seen when the customer opens the panel
   if (Array.isArray(customerNotifications)) {
     const unreadIds = customerNotifications
-      .filter(n => String(n.status || "unread").toLowerCase() === "unread" && !String(n.id || "").startsWith("fallback-"))
+      .filter(n => String(n.status || "unread").toLowerCase() === "unread")
       .map(n => n.id)
     
     if (unreadIds.length > 0) {
       try {
-        // Mark all unread notifications as seen in the database
-        await Promise.all(unreadIds.map(id => markNotificationSeen(id)))
+        // Mark all unread notifications as seen in the database (skip fallback ones)
+        const dbUnreadIds = unreadIds.filter(id => !String(id).startsWith("fallback-"))
+        if (dbUnreadIds.length > 0) {
+            await Promise.all(dbUnreadIds.map(id => markNotificationSeen(id)))
+        }
         // Update local state so the badge disappears immediately
         customerNotifications.forEach(n => {
           if (unreadIds.includes(n.id)) n.status = "seen"
