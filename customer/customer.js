@@ -2000,24 +2000,74 @@ async function runDatabaseCleanup() {
 }
 
 // --- ORDER DRAWER ---
+let scrollLockActive = false;
+
+// Function to prevent background scroll
+function lockBackgroundScroll() {
+  if (!scrollLockActive) {
+    document.body.style.overflow = 'hidden';
+    scrollLockActive = true;
+  }
+}
+
+// Function to restore background scroll
+function unlockBackgroundScroll() {
+  if (scrollLockActive) {
+    document.body.style.overflow = '';
+    scrollLockActive = false;
+  }
+}
+
+// Prevent scroll propagation
+function preventScrollPropagation(e) {
+  e.stopPropagation();
+}
+
 function toggleOrderDrawer() {
   const drawer = document.getElementById("orderDrawer")
   const btn = document.getElementById("orderDrawerBtn")
+  const drawerContent = drawer ? drawer.querySelector(".order-drawer-content") : null
 
   if (!drawer || !btn) return
 
+  const isOpening = !drawer.classList.contains("active")
+  
   drawer.classList.toggle("active")
   btn.classList.toggle("active")
+  
+  if (isOpening) {
+    lockBackgroundScroll()
+    // Add scroll prevention listeners
+    if (drawerContent) {
+      drawerContent.addEventListener('wheel', preventScrollPropagation, { passive: false })
+      drawerContent.addEventListener('touchmove', preventScrollPropagation, { passive: false })
+    }
+  } else {
+    unlockBackgroundScroll()
+    // Remove scroll prevention listeners
+    if (drawerContent) {
+      drawerContent.removeEventListener('wheel', preventScrollPropagation)
+      drawerContent.removeEventListener('touchmove', preventScrollPropagation)
+    }
+  }
 }
 
 function closeOrderDrawer() {
   const drawer = document.getElementById("orderDrawer")
   const btn = document.getElementById("orderDrawerBtn")
+  const drawerContent = drawer ? drawer.querySelector(".order-drawer-content") : null
 
   if (drawer && btn) {
     drawer.classList.remove("active")
     btn.classList.remove("active")
     document.body.classList.remove("drawer-open")
+    unlockBackgroundScroll()
+    
+    // Remove scroll prevention listeners
+    if (drawerContent) {
+      drawerContent.removeEventListener('wheel', preventScrollPropagation)
+      drawerContent.removeEventListener('touchmove', preventScrollPropagation)
+    }
   }
 }
 
@@ -2522,6 +2572,7 @@ function updatePreorderQty(id, name, size, price, change, temperature = null, im
 function togglePreorderDrawer() {
     const drawer = document.getElementById("preorderDrawer")
     const btn = document.getElementById("preorderDrawerBtn")
+    const drawerContent = drawer ? drawer.querySelector(".order-drawer-content") : null
 
     if (!drawer || !btn) return
 
@@ -2531,11 +2582,23 @@ function togglePreorderDrawer() {
     // Ensure drawer is available when on booking page
     if (drawer.style.display === "none") drawer.style.display = "flex"
 
+    const isOpening = !drawer.classList.contains("active")
     drawer.classList.toggle("active")
     btn.classList.toggle("active")
     
-    if (drawer.classList.contains("active")) {
+    if (isOpening) {
         renderPreorderCart()
+        lockBackgroundScroll()
+        if (drawerContent) {
+            drawerContent.addEventListener('wheel', preventScrollPropagation, { passive: false })
+            drawerContent.addEventListener('touchmove', preventScrollPropagation, { passive: false })
+        }
+    } else {
+        unlockBackgroundScroll()
+        if (drawerContent) {
+            drawerContent.removeEventListener('wheel', preventScrollPropagation)
+            drawerContent.removeEventListener('touchmove', preventScrollPropagation)
+        }
     }
 }
 
@@ -2546,11 +2609,18 @@ window.openPaymentFromPreorder = function() {
 function closePreorderDrawer() {
     const drawer = document.getElementById("preorderDrawer")
     const btn = document.getElementById("preorderDrawerBtn")
+    const drawerContent = drawer ? drawer.querySelector(".order-drawer-content") : null
 
     if (drawer && btn) {
         drawer.classList.remove("active")
         btn.classList.remove("active")
         document.body.classList.remove("drawer-open")
+        unlockBackgroundScroll()
+        
+        if (drawerContent) {
+            drawerContent.removeEventListener('wheel', preventScrollPropagation)
+            drawerContent.removeEventListener('touchmove', preventScrollPropagation)
+        }
     }
 }
 

@@ -4422,7 +4422,8 @@ h1 {
   transform: rotate(90deg);
 }
 
-.order-drawer-content {
+.order-drawer-content,
+#preorderDrawer .order-drawer-content {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
@@ -4432,6 +4433,9 @@ h1 {
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   pointer-events: auto;
+  overscroll-behavior: contain; /* Prevent scroll chaining to parent */
+  overscroll-behavior-y: contain;
+  touch-action: pan-y; /* Only allow vertical touch scrolling */
 }
 
 /* Cart Item Card Styling */
