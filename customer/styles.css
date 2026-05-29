@@ -4335,6 +4335,7 @@ h1 {
   transform: translateX(100%);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   border-left: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: auto;
 }
 
 .order-drawer.active {
@@ -4425,8 +4426,12 @@ h1 {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #fdfcfb; /* Subtle cream tint */
   padding-bottom: 120px;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  pointer-events: auto;
 }
 
 /* Cart Item Card Styling */
@@ -4434,6 +4439,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  pointer-events: auto;
 }
 
 .cart-item-card {
@@ -4595,6 +4601,7 @@ h1 {
   bottom: 0;
   z-index: 2;
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  pointer-events: auto;
 }
 
 .cart-summary {
